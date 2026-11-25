@@ -3,20 +3,32 @@
   "name": "Xtend for X",
   "version": "0.1.0",
   "description": "Download any video or GIF from X in the best available quality.",
-  "permissions": ["downloads"],
-  "host_permissions": ["https://cdn.syndication.twimg.com/*"],
+  "permissions": [
+    "downloads"
+  ],
   "background": {
     "service_worker": "background/service-worker.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*", "https://mobile.x.com/*"],
-      "js": ["shared/video-media.js", "page/interceptor.js"],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://mobile.x.com/*"
+      ],
+      "js": [
+        "shared/video-media.js",
+        "page/interceptor.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*", "https://mobile.x.com/*"],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://mobile.x.com/*"
+      ],
       "js": [
         "content/selectors.js",
         "content/post.js",
@@ -26,7 +38,9 @@
         "content/share-menu.js",
         "content/main.js"
       ],
-      "css": ["content/content.css"],
+      "css": [
+        "content/content.css"
+      ],
       "run_at": "document_start"
     }
   ]

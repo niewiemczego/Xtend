@@ -32,7 +32,7 @@ extension/                 the folder you load in Chrome and zip for release
     main.js                start-up and DOM observer (loaded last)
     content.css
   background/
-    service-worker.js      chrome.downloads + syndication fallback
+    service-worker.js      saves files with chrome.downloads
 tests/
   *.test.js                node --test
   fixtures/                HTML and JSON captured from x.com
