@@ -21,6 +21,17 @@ captures the signed-in account (reply box avatar) is replaced with `me` / `profi
 | `html/post-no-video.html`              | text-only post                                                     | 2026-11-26 |
 | `html/post-no-video-with-image.html`   | post with an image, no video                                       | 2026-11-26 |
 | `html/share-menu-original.html`        | open Share menu of an original video post (native *Download video*) | 2026-11-26 |
+| `api/TweetDetail.json`                 | GraphQL `TweetDetail` of a video post with replies (videos + photos, quote) | 2026-11-26 |
+| `api/TweetResultByRestId.json`         | GraphQL `TweetResultByRestId` of a single video post               | 2026-11-26 |
+
+API files are pretty-printed for readable diffs.
+
+## What the API looks like (2026-11-26)
+
+- Media moved out of `legacy`: a post (`result` with `rest_id`) has `media_entities2[]`. `legacy` has no `id_str` and no `extended_entities` anymore.
+- Each `media_entities2` item: `id_str` (= number in the poster URL), `type` (`video` / `animated_gif` / `photo`), `media_url_https` (poster), `video_info.variants[]` (`content_type`, `bitrate`, `url`; one HLS + several MP4) and `allow_download_status.allow_download`.
+- Quoted posts: `quoted_tweet_results.result` (and `nested_quoted_tweet_results.result`) with the same shape.
+- MP4 variant URLs carry a query string (`…/vid/avc1/710x524/<hash>.mp4?tag=29`); the resolution is in the path.
 
 ## What the markup looks like (2026-11-26)
 
