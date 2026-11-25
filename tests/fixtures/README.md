@@ -24,7 +24,12 @@ captures the signed-in account (reply box avatar) is replaced with `me` / `profi
 | `api/TweetDetail.json`                 | GraphQL `TweetDetail` of a video post with replies (videos + photos, quote) | 2026-11-26 |
 | `api/TweetResultByRestId.json`         | GraphQL `TweetResultByRestId` of a single video post               | 2026-11-26 |
 
-API files are pretty-printed for readable diffs.
+| `api/HomeTimeline.json`                | GraphQL `HomeTimeline`: 49 posts, 21 videos, 1 GIF, 11 quotes, no reposts | 2026-11-26 |
+
+API files are pretty-printed for readable diffs. `HomeTimeline.json` has the signed-in viewer's
+relationship fields removed (`relationship_perspectives`, `following`, `super_*`,
+`follow_request_sent`) – they reveal who the viewer follows, blocks or mutes and the parser
+doesn't need them.
 
 ## What the API looks like (2026-11-26)
 
