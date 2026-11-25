@@ -44,5 +44,5 @@ test('content/main.js is loaded last', () => {
 
 test('permissions stay minimal', () => {
   assert.deepEqual(manifest.permissions, ['downloads']);
-  assert.deepEqual(manifest.host_permissions, ['https://cdn.syndication.twimg.com/*']);
+  assert.equal(manifest.host_permissions, undefined);
 });
