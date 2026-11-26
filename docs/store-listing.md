@@ -87,7 +87,13 @@ Xtend runs only on X. On these pages it adds "Download video" to the post's Shar
 
 **Remote code**: No, I am not using remote code. (All code ships in the package; there are no `eval`, remote scripts or Wasm downloads.)
 
-**Data usage** – check none of the data types. Certify:
+**Data usage** – check **Website content** only. Xtend reads the post data X loads on the page
+(video links, post IDs) to find the video to save. It stays in the page's memory and is never
+sent anywhere, but the store asks for data handled locally too. Leave every other type
+unchecked: no personal, health, financial or authentication data, no messages, no location,
+no browsing history (only the current post's address is read), no tracking of clicks or keys.
+
+Certify:
 
 - [x] I do not sell or transfer user data to third parties, outside of the approved use cases
 - [x] I do not use or transfer user data for purposes that are unrelated to my item's single purpose
