@@ -68,6 +68,7 @@ docs/store-listing.md      Chrome Web Store texts and privacy answers
 scripts/package.mjs        reproducible release zip + checksums
 scripts/verify-store.mjs   compares a store / installed copy with a release
 scripts/sign-crx.sh        signs a release zip as .crx for verified uploads
+scripts/push_new_release.sh  asks for the version and pushes the release tag
 .github/workflows/         CI (tests, build) and tagged releases
 tests/
   *.test.js                node --test
@@ -107,9 +108,18 @@ The build is **reproducible**: entries are sorted, stored uncompressed, dated 19
 marked 0644, so the same files always give a byte-identical zip. Next to the zip it writes
 `xtend-<version>.zip.sha256` and `xtend-<version>.files.sha256` (one line per file inside).
 
-To publish, bump `version` in `extension/manifest.json`, merge, then push a matching
-**annotated** tag – its message is what GitHub shows on the Tags page (a plain tag shows the
-last commit's message, e.g. "Merge pull request …"):
+To publish, run the release script from an up-to-date `main`:
+
+```sh
+scripts/push_new_release.sh
+```
+
+It asks for the version (Enter = the one in `extension/manifest.json`), checks that you are on a
+clean `main`, that the tag doesn't exist yet and that the version is higher than the last
+release (the store only accepts higher versions), offers to bump `manifest.json` and push that
+commit if the versions differ, runs the tests, shows what it will tag and – only after you
+confirm – pushes an **annotated** tag `vX.Y.Z` ("Xtend X.Y.Z"), which starts the release
+workflow. By hand it is:
 
 ```sh
 git pull
