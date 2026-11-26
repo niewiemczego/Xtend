@@ -43,6 +43,14 @@ jobs:
           (cd dist && sha256sum -c xtend-*.zip.sha256)
           node scripts/verify-store.mjs dist/xtend-*.zip dist/xtend-*.files.sha256
 
+      - name: Signing works (throwaway key, nothing is published)
+        run: |
+          key="$RUNNER_TEMP/throwaway.pem"
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$key" 2> /dev/null
+          scripts/sign-crx.sh dist/xtend-*.zip "$key"
+          node scripts/verify-store.mjs dist/xtend-*.crx dist/xtend-*.files.sha256
+          rm -f "$key" dist/xtend-*.crx
+
       - uses: actions/upload-artifact@v4
         with:
           name: xtend-package

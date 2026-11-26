@@ -41,10 +41,29 @@ jobs:
       - name: Build the package
         run: node scripts/package.mjs --no-tests
 
+      # Chrome Web Store "Verified CRX uploads": the store only accepts packages signed with
+      # this key. The private key lives in the repository secret CWS_SIGNING_KEY (PEM text);
+      # it is written to the runner's temp folder only for this step and deleted right after.
+      - name: Sign the .crx
+        env:
+          CWS_SIGNING_KEY: ${{ secrets.CWS_SIGNING_KEY }}
+        run: |
+          if [ -z "$CWS_SIGNING_KEY" ]; then
+            echo "::error::Repository secret CWS_SIGNING_KEY is not set – no signed .crx, no release." >&2
+            exit 1
+          fi
+          key="$RUNNER_TEMP/xtend-signing-key.pem"
+          trap 'rm -f "$key"' EXIT
+          (umask 077 && printf '%s\n' "$CWS_SIGNING_KEY" > "$key")
+          openssl rsa -in "$key" -check -noout > /dev/null
+          scripts/sign-crx.sh "dist/xtend-$VERSION.zip" "$key"
+
       - name: Build provenance
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/xtend-${{ env.VERSION }}.zip
+          subject-path: |
+            dist/xtend-${{ env.VERSION }}.zip
+            dist/xtend-${{ env.VERSION }}.crx
 
       - name: GitHub release
         env:
@@ -55,9 +74,13 @@ jobs:
           cat > notes.md <<EOF
           ## Xtend $VERSION
 
-          Download **$zip** – the same package that is uploaded to the Chrome Web Store.
+          | File | What it is |
+          | --- | --- |
+          | **$zip** | the package, reproducible – rebuild it from this tag and get the same SHA-256 |
+          | **xtend-$VERSION.crx** | the same files signed with Xtend's key – this is what is uploaded to the Chrome Web Store (verified CRX uploads) |
+          | \`*.sha256\` | checksums of the zip and of every file inside |
 
-          **SHA-256** \`$sha\`
+          **SHA-256 of $zip** \`$sha\`
 
           ### Verify it
 
@@ -68,9 +91,10 @@ jobs:
              node scripts/package.mjs --no-tests
              cat dist/$zip.sha256   # must be $sha
              \`\`\`
-          2. **Check it was built here** from tag $GITHUB_REF_NAME by GitHub Actions:
+          2. **Check it was built and signed here** from tag $GITHUB_REF_NAME by GitHub Actions:
              \`\`\`sh
              gh attestation verify $zip --repo $GITHUB_REPOSITORY
+             gh attestation verify xtend-$VERSION.crx --repo $GITHUB_REPOSITORY
              \`\`\`
           3. **Compare the Chrome Web Store copy** file by file (the store re-signs the package and adds \`_metadata/\`, so only the files inside can match):
              \`\`\`sh
@@ -79,5 +103,5 @@ jobs:
              See *Verify a release* in the README.
           EOF
           gh release create "$GITHUB_REF_NAME" \
-            "dist/$zip" "dist/$zip.sha256" "dist/xtend-$VERSION.files.sha256" \
+            "dist/$zip" "dist/xtend-$VERSION.crx" "dist/$zip.sha256" "dist/xtend-$VERSION.files.sha256" \
             --title "Xtend $VERSION" --notes-file notes.md --verify-tag
