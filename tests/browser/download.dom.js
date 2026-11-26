@@ -1,4 +1,4 @@
-// DOM tests for extension/content/download.js and toast.js on the captured HTML.
+// DOM tests for extension/content/download.js on the captured HTML.
 /* global test, assert, fixtures, Xtend, XtendVideoMedia */
 
 // isolated scope: test files share the page's global scope
@@ -35,40 +35,32 @@
     return { doc, post };
   }
 
-  function toastOf(doc) {
-    const el = doc.querySelector(`.${Xtend.toast.CLASS}`);
-    return el ? { text: el.textContent, kind: el.dataset.kind, visible: el.classList.contains(Xtend.toast.VISIBLE) } : null;
-  }
+  // --- start(): download and its result ---------------------------------------------------
 
-  // --- start(): download + toast -----------------------------------------------------------
-
-  test('start: sends the resolved video to the service worker, toast says Saved', async () => {
+  test('start: sends the resolved video to the service worker', async () => {
     Xtend.videoStore.clear();
     const item = await timelineItem({ allowDownload: true });
     Xtend.videoStore.add([item]);
     const sent = fakeWorker();
     const { doc, post } = await postOf('post-original-timeline.html');
 
-    const done = D.start(post);
-    assert.deepEqual(toastOf(doc), { text: 'Downloading…', kind: 'busy', visible: true });
-    await done;
+    const result = await D.start(post);
 
+    assert.deepEqual(result, { ok: true, saved: 1, authorDisabled: false });
     assert.equal(sent.length, 1);
     assert.equal(sent[0].type, 'xtend:download');
     assert.equal(sent[0].video.url, item.url);
     assert.equal(sent[0].video.tweetId, TIMELINE.tweetId);
-    assert.deepEqual(toastOf(doc), { text: 'Saved', kind: 'ok', visible: true });
+    assert.equal(doc.body.children.length, 1, 'nothing added to the page');
   });
 
-  test('start: still downloads when the author turned downloads off, and says so', async () => {
+  test('start: still downloads when the author turned downloads off', async () => {
     Xtend.videoStore.clear();
     Xtend.videoStore.add([await timelineItem({ allowDownload: false })]);
     const sent = fakeWorker();
-    const { doc, post } = await postOf('post-original-timeline.html');
-    await D.start(post);
+    const { post } = await postOf('post-original-timeline.html');
+    assert.deepEqual(await D.start(post), { ok: true, saved: 1, authorDisabled: true });
     assert.equal(sent.length, 1);
-    assert.equal(toastOf(doc).kind, 'ok');
-    assert.ok(/author turned off downloads/.test(toastOf(doc).text), toastOf(doc).text);
   });
 
   test('start: GIF downloads from its direct MP4 even with an empty store', async () => {
@@ -81,23 +73,22 @@
     assert.equal(sent[0].video.url, 'https://video.twimg.com/tweet_video/HX7auBYXIAA1xX0.mp4');
   });
 
-  test('start: video not loaded yet → error toast with what to do', async () => {
+  test('start: video not loaded yet → error that says what to do', async () => {
     Xtend.videoStore.clear();
     const sent = fakeWorker();
-    const { doc, post } = await postOf('post-original-timeline.html');
-    await D.start(post);
+    const { post } = await postOf('post-original-timeline.html');
+    const result = await D.start(post);
     assert.equal(sent.length, 0);
-    assert.equal(toastOf(doc).kind, 'error');
-    assert.ok(/hasn't sent this video yet/.test(toastOf(doc).text), toastOf(doc).text);
+    assert.equal(result.ok, false);
+    assert.ok(/hasn't sent this video yet/.test(result.error), result.error);
   });
 
-  test('start: refused / failed download → the reason in the toast', async () => {
+  test('start: refused / failed download → the reason', async () => {
     Xtend.videoStore.clear();
     Xtend.videoStore.add([await timelineItem()]);
     fakeWorker({ ok: false, error: 'Download blocked' });
-    const { doc, post } = await postOf('post-original-timeline.html');
-    await D.start(post);
-    assert.deepEqual(toastOf(doc), { text: 'Download blocked', kind: 'error', visible: true });
+    const { post } = await postOf('post-original-timeline.html');
+    assert.deepEqual(await D.start(post), { ok: false, error: 'Download blocked' });
   });
 
   test("start: background script doesn't answer the ping → says so, nothing sent", async () => {
@@ -109,10 +100,10 @@
       sent.push(message);
       return { ok: true };
     };
-    const { doc, post } = await postOf('post-original-timeline.html');
-    await D.start(post);
+    const { post } = await postOf('post-original-timeline.html');
+    const result = await D.start(post);
     assert.equal(sent.length, 0);
-    assert.ok(/isn't answering/.test(toastOf(doc).text), toastOf(doc).text);
+    assert.ok(/isn't answering/.test(result.error), result.error);
   });
 
   test('start: reloaded extension → ask to refresh the page', async () => {
@@ -121,9 +112,8 @@
     D.send = async () => {
       throw new Error('Extension context invalidated.');
     };
-    const { doc, post } = await postOf('post-original-timeline.html');
-    await D.start(post);
-    assert.equal(toastOf(doc).text, 'Xtend was updated – refresh the page.');
+    const { post } = await postOf('post-original-timeline.html');
+    assert.deepEqual(await D.start(post), { ok: false, error: 'Xtend was updated – refresh the page.' });
   });
 
   test('start: a second start while the post is downloading is ignored', async () => {
@@ -137,26 +127,56 @@
       if (sent.length > 1) return Promise.resolve({ ok: true }); // later downloads answer at once
       return new Promise((resolve) => (finish = () => resolve({ ok: true })));
     };
-    const { doc, post } = await postOf('post-original-timeline.html');
+    const { post } = await postOf('post-original-timeline.html');
     const first = D.start(post);
-    D.start(post);
+    assert.deepEqual(await D.start(post), { ok: false, skipped: true });
     await settle();
     assert.equal(sent.length, 1);
     finish();
-    await first;
-    assert.equal(toastOf(doc).kind, 'ok');
+    assert.equal((await first).ok, true);
     await D.start(post); // can be downloaded again afterwards
     assert.equal(sent.length, 2);
   });
 
-  test('toast: one element per page, reused', async () => {
-    const doc = await fixtures('post-no-video.html');
-    Xtend.toast.show('one', 'busy', doc);
-    Xtend.toast.show('two', 'ok', doc);
-    const toasts = doc.querySelectorAll(`.${Xtend.toast.CLASS}`);
-    assert.equal(toasts.length, 1);
-    assert.equal(toasts[0].textContent, 'two');
-    assert.equal(toasts[0].getAttribute('role'), 'status');
+  test('messages to the service worker carry the debug flag', async () => {
+    Xtend.videoStore.clear();
+    Xtend.videoStore.add([await timelineItem()]);
+    const messages = [];
+    D.send = async (message) => {
+      messages.push(message);
+      return { ok: true };
+    };
+    const { post } = await postOf('post-original-timeline.html');
+    const before = localStorage.getItem('xtendDebug');
+    try {
+      localStorage.setItem('xtendDebug', '1');
+      await D.start(post);
+    } finally {
+      if (before === null) localStorage.removeItem('xtendDebug');
+      else localStorage.setItem('xtendDebug', before);
+    }
+    assert.deepEqual(messages.map((m) => [m.type, m.debug]), [
+      ['xtend:ping', true],
+      ['xtend:download', true],
+    ]);
+  });
+
+  test('debug: silent unless localStorage.xtendDebug is "1"', () => {
+    const before = localStorage.getItem('xtendDebug');
+    const logged = [];
+    const original = console.log;
+    console.log = (...args) => logged.push(args.join(' '));
+    try {
+      localStorage.removeItem('xtendDebug');
+      Xtend.debug.log('hidden');
+      localStorage.setItem('xtendDebug', '1');
+      Xtend.debug.log('shown');
+    } finally {
+      console.log = original;
+      if (before === null) localStorage.removeItem('xtendDebug');
+      else localStorage.setItem('xtendDebug', before);
+    }
+    assert.deepEqual(logged, ['[xtend] shown']);
   });
 
   // --- sendToWorker ------------------------------------------------------------------------

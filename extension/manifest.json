@@ -31,11 +31,11 @@
       ],
       "js": [
         "shared/video-media.js",
+        "content/debug.js",
         "content/selectors.js",
         "content/post.js",
         "content/video-store.js",
         "content/video-resolver.js",
-        "content/toast.js",
         "content/download.js",
         "content/share-menu.js",
         "content/main.js"

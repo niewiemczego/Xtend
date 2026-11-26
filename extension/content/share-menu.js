@@ -7,7 +7,7 @@
 //   our own item is added, cloned from the last item (*Post video*).
 //
 // The menu is rendered at the end of <body>; Xtend.post.postForMenu finds its post through
-// aria-labelledby → Share button. Progress and the result show in a toast (content/toast.js).
+// aria-labelledby → Share button. Nothing is shown on the page; debug mode logs what happens.
 
 (function () {
   'use strict';
@@ -86,6 +86,7 @@
     if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
     const found = hit(event);
     if (!found) return;
+    Xtend.debug.log('Share menu: Download video', found.post);
     event.preventDefault();
     event.stopImmediatePropagation();
     closeMenu(found.menu);
