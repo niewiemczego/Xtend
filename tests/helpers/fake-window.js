@@ -41,10 +41,11 @@ function createXHRClass() {
 }
 
 /**
- * @param {{ fetch?: Function, deliverMessages?: boolean }} options
+ * @param {{ fetch?: Function, deliverMessages?: boolean, navigator?: object }} options
  *   deliverMessages: postMessage dispatches a `message` event to this window's listeners
+ *   navigator: e.g. from createNavigator()
  */
-function createWindow({ fetch, deliverMessages = false } = {}) {
+function createWindow({ fetch, deliverMessages = false, navigator } = {}) {
   const listeners = {};
   const win = {
     location: { origin: ORIGIN },
@@ -62,8 +63,10 @@ function createWindow({ fetch, deliverMessages = false } = {}) {
       if (deliverMessages) win.dispatchEvent('message', { source: win.global, origin: ORIGIN, data });
     },
     XMLHttpRequest: createXHRClass(),
+    URL,
   };
   if (fetch) win.fetch = fetch;
+  if (navigator) win.navigator = navigator;
   win.window = win;
   win.self = win;
   vm.createContext(win);
@@ -71,6 +74,32 @@ function createWindow({ fetch, deliverMessages = false } = {}) {
   // object scripts compare `event.source` against.
   Object.defineProperty(win, 'global', { value: vm.runInContext('globalThis', win) });
   return win;
+}
+
+/**
+ * A navigator whose `clipboard.writeText` and `share` live on prototypes, as in browsers
+ * (Clipboard.prototype, Navigator.prototype). Every call is recorded in `calls`.
+ * @param {{ clipboard?: boolean, share?: boolean }} options  which APIs exist
+ */
+function createNavigator({ clipboard = true, share = true } = {}) {
+  const calls = [];
+  class FakeClipboard {
+    writeText(text) {
+      calls.push({ api: 'writeText', self: this, args: [...arguments] });
+      return Promise.resolve();
+    }
+  }
+  class FakeNavigator {}
+  if (share) {
+    FakeNavigator.prototype.share = function (data) {
+      calls.push({ api: 'share', self: this, args: [...arguments] });
+      return Promise.resolve();
+    };
+  }
+  const nav = new FakeNavigator();
+  if (clipboard) nav.clipboard = new FakeClipboard();
+  Object.defineProperty(nav, 'calls', { value: calls });
+  return nav;
 }
 
 /** Runs extension files (paths relative to extension/) in the window, in order. */
@@ -87,4 +116,4 @@ const flush = () => new Promise((resolve) => setImmediate(resolve));
 /** Plain copy of a value created inside the vm context (for deepEqual across realms). */
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
-module.exports = { createWindow, load, flush, plain, ORIGIN };
+module.exports = { createWindow, createNavigator, load, flush, plain, ORIGIN };

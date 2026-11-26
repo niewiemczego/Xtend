@@ -1,6 +1,6 @@
 # Xtend
 
-**Xtend: Social Media Toolkit** – a lightweight browser extension that adds the small features social media sites are missing. Today: save any video or GIF from X in the best available quality, right from the Share menu – including quoted posts. More platforms and tools to come. No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
+**Xtend: Social Media Toolkit** – a lightweight browser extension that adds the small features social media sites are missing. Today, on X: save any video or GIF in the best available quality, right from the Share menu – including quoted posts – and share post links without tracking parameters. More platforms and tools to come. No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
 
 > Status: work in progress – see the [v0.1 tracking issue](https://github.com/niewiemczego/Xtend/issues/15).
 
@@ -20,6 +20,8 @@ Open the **Share** menu of a post with a video or GIF and choose **Download vide
 - On original posts this is X's own *Download video* item – Xtend takes it over.
 - On quote posts whose quoted post has a video, Xtend adds the item.
 
+**Copy link** and **Share post via …** in the Share menu give a clean post link: `https://x.com/<user>/status/<id>` without `?s=20`, `?a=…` or anything else after the path. Other links and text are left as they are.
+
 Xtend shows nothing on the page. If a download doesn't happen, turn on debug mode (below).
 
 ## Troubleshooting: debug mode
@@ -31,7 +33,7 @@ Xtend shows nothing on the page. If a download doesn't happen, turn on debug mod
    ```
 3. Refresh the page and try the download again.
 
-Every Xtend line in the console starts with `[xtend]`: videos found while you scroll (`+3 video(s), 12 stored`), the Share menu click, the download request and its result – or the reason it failed (e.g. *X hasn't sent this video yet…*, *the browser did not start the download*). Include these lines when you report a problem.
+Every Xtend line in the console starts with `[xtend]`: videos found while you scroll (`+3 video(s), 12 stored`), the Share menu click, each cleaned link (`cleaned link: <before> → <after>`), the download request and its result – or the reason it failed (e.g. *X hasn't sent this video yet…*, *the browser did not start the download*). Include these lines when you report a problem.
 
 The service worker logs the same way in its own console (`chrome://extensions` → Xtend → *service worker*), but only for downloads started while debug mode is on.
 
@@ -48,8 +50,10 @@ extension/                 the folder you load in Chrome and zip for release
   manifest.json
   shared/
     video-media.js         finds MP4 links in X's JSON (page world + service worker + tests)
-  page/
-    interceptor.js         reads X's API responses (fetch + XHR), MAIN world
+    post-link.js           strips tracking parameters from a post link (page world + tests)
+  page/                    MAIN world
+    interceptor.js         reads X's API responses (fetch + XHR)
+    link-cleaner.js        cleans the link Copy link / Share post via … hand out
   content/                 loaded in the order listed in the manifest, sharing `self.Xtend`
     selectors.js           every selector for X's markup
     post.js                post lookup: has video, tweet IDs, media ID
@@ -75,14 +79,14 @@ tests/
   *.test.js                node --test
   helpers/                 fake window for running extension scripts in Node
   browser/                 DOM tests (*.dom.js) – open in a browser
-  fixtures/                HTML and JSON captured from x.com
+  fixtures/                HTML, JSON and share calls captured from x.com
 ```
 
 ## Tests
 
 Nothing to install.
 
-**Logic** (parser, interceptor, video store, service worker, packaging) – Node's built-in test runner (Node 20+):
+**Logic** (parser, interceptor, link cleaning, video store, service worker, packaging) – Node's built-in test runner (Node 20+):
 
 ```sh
 node --test

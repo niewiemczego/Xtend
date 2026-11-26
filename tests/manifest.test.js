@@ -32,10 +32,15 @@ test('every script is valid JavaScript', () => {
   }
 });
 
-test('interceptor runs in the MAIN world at document_start, after video-media.js', () => {
+test('page scripts run in the MAIN world at document_start, each after its shared file', () => {
   const page = manifest.content_scripts.find((cs) => cs.world === 'MAIN');
   assert.equal(page.run_at, 'document_start');
-  assert.deepEqual(page.js, ['shared/video-media.js', 'page/interceptor.js']);
+  assert.deepEqual(page.js, [
+    'shared/video-media.js',
+    'page/interceptor.js',
+    'shared/post-link.js',
+    'page/link-cleaner.js',
+  ]);
 });
 
 test('content/main.js is loaded last', () => {

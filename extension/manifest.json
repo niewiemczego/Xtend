@@ -3,7 +3,7 @@
   "name": "Xtend: Social Media Toolkit",
   "short_name": "Xtend",
   "version": "0.1.0",
-  "description": "Small tools that social media sites are missing. Today: save videos and GIFs in the best quality from the Share menu.",
+  "description": "Small tools that social media sites are missing. Today, on X: save videos and GIFs in the best quality, share clean post links.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -25,7 +25,9 @@
       ],
       "js": [
         "shared/video-media.js",
-        "page/interceptor.js"
+        "page/interceptor.js",
+        "shared/post-link.js",
+        "page/link-cleaner.js"
       ],
       "run_at": "document_start",
       "world": "MAIN"
