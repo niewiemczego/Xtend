@@ -65,7 +65,9 @@ extension/                 the folder you load in Chrome and zip for release
   icons/                   16 / 32 / 48 / 128 px PNGs (generated from design/)
 design/                    icon sources (SVG) – see design/README.md
 docs/store-listing.md      Chrome Web Store texts and privacy answers
-scripts/package.sh         builds the release zip
+scripts/package.mjs        reproducible release zip + checksums
+scripts/verify-store.mjs   compares a store / installed copy with a release
+.github/workflows/         CI (tests, build) and tagged releases
 tests/
   *.test.js                node --test
   helpers/                 fake window for running extension scripts in Node
@@ -77,7 +79,7 @@ tests/
 
 Nothing to install.
 
-**Logic** (parser, interceptor, video store) – Node's built-in test runner (Node 20+):
+**Logic** (parser, interceptor, video store, service worker, packaging) – Node's built-in test runner (Node 20+):
 
 ```sh
 node --test
@@ -88,6 +90,8 @@ node --test
 ```sh
 python3 -m http.server 8000
 # open http://localhost:8000/tests/browser/ in Search, Safari or Chrome
+# or headless, as CI does:
+tests/browser/run-headless.sh
 ```
 
 Every test runs against the captures in `tests/fixtures/` – see its README for what each file is.
@@ -95,12 +99,57 @@ Every test runs against the captures in `tests/fixtures/` – see its README for
 ## Release
 
 ```sh
-scripts/package.sh   # runs the tests, then builds dist/xtend-<version>.zip from extension/
+node scripts/package.mjs   # runs the tests, then builds dist/xtend-<version>.zip from extension/
 ```
 
-The version comes from `extension/manifest.json` – bump it before every release. Store texts,
-permission justifications and the screenshot list are in [`docs/store-listing.md`](docs/store-listing.md);
-the privacy policy is [`PRIVACY.md`](PRIVACY.md).
+The build is **reproducible**: entries are sorted, stored uncompressed, dated 1980-01-01 and
+marked 0644, so the same files always give a byte-identical zip. Next to the zip it writes
+`xtend-<version>.zip.sha256` and `xtend-<version>.files.sha256` (one line per file inside).
+
+To publish, bump `version` in `extension/manifest.json`, merge, then push a matching tag:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+GitHub Actions (`.github/workflows/release.yml`) runs all tests, builds the zip, signs a
+[build provenance](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations)
+attestation and creates the GitHub release with the zip and both checksum files. The same zip
+goes to the Chrome Web Store. Store texts, permission justifications and the screenshot list
+are in [`docs/store-listing.md`](docs/store-listing.md); the privacy policy is
+[`PRIVACY.md`](PRIVACY.md).
+
+Every push and pull request runs `.github/workflows/ci.yml`: unit tests, DOM tests in headless
+Chrome, the package build, a reproducibility check and the checksum check.
+
+## Verify a release
+
+Anyone can check that a release – and the copy in the Chrome Web Store – is built from this
+repository. Only Node is needed.
+
+1. **Rebuild it** from the tag and compare the SHA-256 with the release page:
+   ```sh
+   git clone https://github.com/niewiemczego/Xtend && cd Xtend
+   git checkout v0.1.0
+   node scripts/package.mjs --no-tests
+   cat dist/xtend-0.1.0.zip.sha256
+   ```
+2. **Check where the release zip was built** (GitHub CLI):
+   ```sh
+   gh attestation verify xtend-0.1.0.zip --repo niewiemczego/Xtend
+   ```
+3. **Compare the Chrome Web Store copy.** The store re-signs every package and adds a
+   `_metadata/` folder, so its file never has the zip's SHA-256 – but every file inside must be
+   identical. Point the checker at the installed extension folder (Chrome:
+   `chrome://extensions` → Developer mode → the extension's ID; the folder is in your profile's
+   `Extensions/<id>/<version>/`) or at a downloaded `.crx`:
+   ```sh
+   node scripts/verify-store.mjs <installed folder or .crx> xtend-0.1.0.files.sha256
+   ```
+   `OK – all N files match the release` means the store serves exactly the released code.
+   `_metadata/` is ignored, and so are the `update_url` / `key` entries the store or browser may
+   add to `manifest.json` (the output says when that happened). Run it from a checkout of the
+   same tag.
 
 ## License
 

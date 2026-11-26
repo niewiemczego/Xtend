@@ -1,0 +1,83 @@
+name: Release
+
+# Push a tag that matches the manifest version to publish a release:
+#   git tag v0.1.0 && git push origin v0.1.0
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # create the GitHub release
+  id-token: write # sign the build provenance
+  attestations: write # store the build provenance
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: The tag matches the manifest version
+        run: |
+          version="$(node -p "require('./extension/manifest.json').version")"
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match manifest version v$version" >&2
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Unit tests (node --test)
+        run: node --test
+
+      - name: DOM tests (headless Chrome)
+        run: tests/browser/run-headless.sh
+
+      - name: Build the package
+        run: node scripts/package.mjs --no-tests
+
+      - name: Build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/xtend-${{ env.VERSION }}.zip
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          zip="xtend-$VERSION.zip"
+          sha="$(cut -d' ' -f1 "dist/$zip.sha256")"
+          cat > notes.md <<EOF
+          ## Xtend $VERSION
+
+          Download **$zip** – the same package that is uploaded to the Chrome Web Store.
+
+          **SHA-256** \`$sha\`
+
+          ### Verify it
+
+          1. **Rebuild it yourself** – the build is reproducible, so a clean checkout gives the same bytes:
+             \`\`\`sh
+             git clone https://github.com/$GITHUB_REPOSITORY && cd Xtend
+             git checkout $GITHUB_REF_NAME
+             node scripts/package.mjs --no-tests
+             cat dist/$zip.sha256   # must be $sha
+             \`\`\`
+          2. **Check it was built here** from tag $GITHUB_REF_NAME by GitHub Actions:
+             \`\`\`sh
+             gh attestation verify $zip --repo $GITHUB_REPOSITORY
+             \`\`\`
+          3. **Compare the Chrome Web Store copy** file by file (the store re-signs the package and adds \`_metadata/\`, so only the files inside can match):
+             \`\`\`sh
+             node scripts/verify-store.mjs <store .crx or installed extension folder> xtend-$VERSION.files.sha256
+             \`\`\`
+             See *Verify a release* in the README.
+          EOF
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/$zip" "dist/$zip.sha256" "dist/xtend-$VERSION.files.sha256" \
+            --title "Xtend $VERSION" --notes-file notes.md --verify-tag

@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests and package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Unit tests (node --test)
+        run: node --test
+
+      - name: DOM tests (headless Chrome)
+        run: tests/browser/run-headless.sh
+
+      - name: Build the package
+        run: node scripts/package.mjs --no-tests
+
+      - name: The package is reproducible
+        run: |
+          first="$(cut -d' ' -f1 dist/xtend-*.zip.sha256)"
+          rm -rf dist
+          node scripts/package.mjs --no-tests > /dev/null
+          second="$(cut -d' ' -f1 dist/xtend-*.zip.sha256)"
+          echo "first build:  $first"
+          echo "second build: $second"
+          test "$first" = "$second"
+
+      - name: The package matches its own checksum files
+        run: |
+          (cd dist && sha256sum -c xtend-*.zip.sha256)
+          node scripts/verify-store.mjs dist/xtend-*.zip dist/xtend-*.files.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xtend-package
+          path: dist/
+          retention-days: 14
