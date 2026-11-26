@@ -1,5 +1,5 @@
 // Content script entry point – loaded last. Starts listening for page messages and
-// watches the DOM for posts and Share menus.
+// watches the DOM for Share menus.
 
 (function () {
   'use strict';
@@ -10,15 +10,14 @@
   Xtend.videoStore.listen();
   Xtend.shareMenu.install(document);
 
-  // X renders posts continuously (scrolling, navigation, lazy media). Rescan once per frame
-  // at most, whatever the number of DOM changes.
+  // The Share menu is rendered when it opens. Rescan once per frame at most, whatever the
+  // number of DOM changes.
   let scheduled = false;
   function scheduleScan() {
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
-      Xtend.downloadButton.scan(document);
       Xtend.shareMenu.scan(document);
     });
   }

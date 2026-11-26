@@ -7,7 +7,7 @@
 //   our own item is added, cloned from the last item (*Post video*).
 //
 // The menu is rendered at the end of <body>; Xtend.post.postForMenu finds its post through
-// aria-labelledby → Share button. Progress and errors show on the post's action-bar button.
+// aria-labelledby → Share button. Progress and the result show in a toast (content/toast.js).
 
 (function () {
   'use strict';
@@ -42,7 +42,7 @@
     }
     item.classList.add(ITEM_CLASS);
     const icon = item.querySelector('svg');
-    if (icon) icon.outerHTML = Xtend.downloadButton.ICON;
+    if (icon) icon.outerHTML = Xtend.download.ICON;
     const labels = Array.from(item.querySelectorAll('div, span')).filter(
       (el) => el.textContent.trim() && !el.querySelector('svg'),
     );
@@ -89,7 +89,7 @@
     event.preventDefault();
     event.stopImmediatePropagation();
     closeMenu(found.menu);
-    Xtend.downloadButton.start(found.post);
+    Xtend.download.start(found.post);
   }
 
   function swallow(event) {

@@ -1,6 +1,6 @@
 # Xtend
 
-Xtend is a lightweight browser extension that adds the features X is missing for free. Download any video or GIF in the best available quality with one click, right from the post's action bar or the Share menu – including reposts and quoted posts. No accounts, no tracking, no third-party servers. Not affiliated with X Corp.
+Xtend is a lightweight browser extension that adds the features X is missing for free. Download any video or GIF in the best available quality with one click, right from the Share menu – including quoted posts. No accounts, no tracking, no third-party servers. Not affiliated with X Corp.
 
 > Status: work in progress – see the [v0.1 tracking issue](https://github.com/niewiemczego/Xtend/issues/15).
 
@@ -27,7 +27,8 @@ extension/                 the folder you load in Chrome and zip for release
     post.js                post lookup: has video, tweet IDs, media ID
     video-store.js         MP4 links received from the interceptor
     video-resolver.js      video on screen → MP4 link
-    download-button.js     icon in the action bar
+    toast.js               progress / result message at the bottom of the page
+    download.js            resolve a post's videos → service worker → toast
     share-menu.js          "Download video" in the Share menu
     main.js                start-up and DOM observer (loaded last)
     content.css

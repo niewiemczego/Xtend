@@ -8,7 +8,7 @@
 // isolated scope: test files share the page's global scope
 {
   const M = Xtend.shareMenu;
-  const B = Xtend.downloadButton;
+  const D = Xtend.download;
   const S = Xtend.selectors;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -24,7 +24,7 @@
 
   function fakeWorker() {
     const sent = [];
-    B.send = async (message) => {
+    D.send = async (message) => {
       if (message.type === 'xtend:ping') return { ok: true };
       sent.push(message);
       return { ok: true, downloadId: 1, filename: 'x.mp4' };
@@ -78,7 +78,7 @@
     const item = await videoItem(TIMELINE.tweetId, TIMELINE.mediaId);
     Xtend.videoStore.add([item]);
     const sent = fakeWorker();
-    const { menu, bar } = await postWithMenu('post-original-timeline.html');
+    const { doc, menu } = await postWithMenu('post-original-timeline.html');
     const native = nativeItem(menu);
     const xCalls = xHandlers(native, ['click', 'pointerdown', 'pointerup', 'mousedown', 'mouseup']);
     const closed = [];
@@ -94,8 +94,9 @@
     assert.deepEqual(closed, ['Escape'], 'menu asked to close');
     assert.equal(sent.length, 1);
     assert.equal(sent[0].video.url, item.url);
-    const button = bar.querySelector(`.${B.CLASS}`);
-    assert.ok(button && button.classList.contains('xtend-ok'), 'progress shown on the action-bar button');
+    const toast = doc.querySelector(`.${Xtend.toast.CLASS}`);
+    assert.ok(toast && toast.dataset.kind === 'ok', 'result shown in the toast');
+    assert.equal(doc.querySelectorAll('.xtend-download').length, 0, 'no action-bar button anymore');
   });
 
   test("menu: Enter and Space on X's item download too", async () => {
