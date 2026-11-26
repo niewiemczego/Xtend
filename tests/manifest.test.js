@@ -12,6 +12,7 @@ const scripts = [
   manifest.background.service_worker,
   ...manifest.content_scripts.flatMap((cs) => cs.js || []),
 ];
+const icons = Object.values(manifest.icons || {});
 const styles = manifest.content_scripts.flatMap((cs) => cs.css || []);
 
 test('is Manifest V3', () => {
@@ -19,7 +20,7 @@ test('is Manifest V3', () => {
 });
 
 test('every file referenced by the manifest exists', () => {
-  for (const file of [...scripts, ...styles]) {
+  for (const file of [...scripts, ...styles, ...icons]) {
     assert.ok(existsSync(join(EXT, file)), `missing: ${file}`);
   }
 });
@@ -48,9 +49,19 @@ test('permissions stay minimal', () => {
 });
 
 test("store name and short name fit Chrome's limits", () => {
-  assert.equal(manifest.name, 'Xtend: Video Downloader & More');
+  assert.equal(manifest.name, 'Xtend: Social Media Toolkit');
   assert.ok(manifest.name.length <= 75, 'name ≤ 75 characters');
   assert.equal(manifest.short_name, 'Xtend');
   assert.ok(manifest.short_name.length <= 12, 'short_name ≤ 12 characters');
   assert.ok(manifest.description.length <= 132, 'description ≤ 132 characters');
+});
+
+test('icons: 16, 32, 48 and 128 px PNGs at the declared sizes', () => {
+  assert.deepEqual(Object.keys(manifest.icons), ['16', '32', '48', '128']);
+  for (const [size, file] of Object.entries(manifest.icons)) {
+    const png = readFileSync(join(EXT, file));
+    assert.equal(png.toString('ascii', 1, 4), 'PNG', file);
+    assert.equal(png.readUInt32BE(16), Number(size), `${file} width`);
+    assert.equal(png.readUInt32BE(20), Number(size), `${file} height`);
+  }
 });

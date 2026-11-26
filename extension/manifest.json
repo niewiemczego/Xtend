@@ -1,9 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Xtend: Video Downloader & More",
+  "name": "Xtend: Social Media Toolkit",
   "short_name": "Xtend",
   "version": "0.1.0",
-  "description": "Save videos and GIFs from your feed in the best available quality, right from the Share menu. More tools to come.",
+  "description": "Small tools that social media sites are missing. Today: save videos and GIFs in the best quality from the Share menu.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "permissions": [
     "downloads"
   ],

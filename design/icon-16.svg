@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Xtend icon for 16 px: no frame (it turns into noise); the X is drawn as two crossing
+       lines with short arrowheads at the tips, which stays readable at this size. -->
+  <rect width="128" height="128" rx="28" fill="#4F46E5"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 36L92 92"/><path d="M92 36L36 92"/>
+    <path d="M34 52V34H52"/><path d="M76 34H94V52"/>
+    <path d="M34 76V94H52"/><path d="M94 76V94H76"/>
+  </g>
+</svg>
