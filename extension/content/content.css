@@ -17,3 +17,9 @@
 .xtend-download.xtend-error.xtend-error {
   color: rgb(244, 33, 46);
 }
+
+/* Our "Download video" item in the Share menu (#11). X highlights its own items through
+   data-highlighted; ours is highlighted on plain hover with the same colour. */
+.xtend-menu-item:hover {
+  background-color: var(--x-hover-subtle);
+}

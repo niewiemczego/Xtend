@@ -1,5 +1,5 @@
 // Content script entry point – loaded last. Starts listening for page messages and
-// watches the DOM for posts (and, in #11, Share menus).
+// watches the DOM for posts and Share menus.
 
 (function () {
   'use strict';
@@ -8,6 +8,7 @@
 
   // Content scripts run at document_start, so this is in place before X's first API call.
   Xtend.videoStore.listen();
+  Xtend.shareMenu.install(document);
 
   // X renders posts continuously (scrolling, navigation, lazy media). Rescan once per frame
   // at most, whatever the number of DOM changes.
@@ -18,6 +19,7 @@
     requestAnimationFrame(() => {
       scheduled = false;
       Xtend.downloadButton.scan(document);
+      Xtend.shareMenu.scan(document);
     });
   }
 

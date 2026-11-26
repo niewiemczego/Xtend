@@ -199,13 +199,26 @@
     }
   }
 
+  /**
+   * Starts a download for `post` as if its button was clicked (used by the Share menu), so the
+   * button shows the progress and the result. Without a button, downloads directly.
+   */
+  function start(post) {
+    const bar = P.findActionBars(post).find((b) => P.findPost(b) === post);
+    const button = bar ? ensure(bar, post) : null;
+    if (button) button.click();
+    else downloadPost(post).catch(() => {});
+  }
+
   Xtend.downloadButton = {
     ensure,
     scan,
+    start,
     downloadPost,
     /** Sends a message to the service worker: (message, {timeoutMs, timeoutMessage}) → reply. Replaceable in tests. */
     send: sendToWorker,
     sendToWorker,
     CLASS,
+    ICON,
   };
 })();
