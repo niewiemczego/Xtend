@@ -117,6 +117,12 @@
     get size() {
       return items.size;
     },
+    /** Forget everything (used by tests). */
+    clear() {
+      items.clear();
+      byMedia.clear();
+      byTweet.clear();
+    },
     MAX_ITEMS,
   };
 })();
