@@ -1,4 +1,4 @@
-// "Download video" in the Share menu (original posts and quote posts; no reposts yet).
+// "Download video" in the Share menu (original posts, reposts of them, and quote posts).
 //
 // - X's own *Download video* item (original posts): left exactly as X renders it – cloning,
 //   hiding or moving it broke the menu layout in the prototype. Its activation is taken over

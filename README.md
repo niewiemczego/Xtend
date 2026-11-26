@@ -2,9 +2,15 @@
 
 **Xtend: Social Media Toolkit** – a lightweight browser extension that adds the small features social media sites are missing. Today, on X: save any video or GIF in the best available quality, right from the Share menu – including quoted posts – and share post links without tracking parameters. More platforms and tools to come. No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
 
-> Status: work in progress – see the [v0.1 tracking issue](https://github.com/niewiemczego/Xtend/issues/15).
+## Install
 
-## Install (developer mode)
+### From a release
+
+1. Download `xtend-<version>.zip` from the [latest release](https://github.com/niewiemczego/Xtend/releases/latest) and unzip it
+2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode**
+3. **Load unpacked** → select the unzipped folder
+
+### From source (developer mode)
 
 Plain JavaScript, no dependencies and no build step.
 
@@ -15,10 +21,11 @@ Plain JavaScript, no dependencies and no build step.
 
 ## Usage
 
-Open the **Share** menu of a post with a video or GIF and choose **Download video**. The file is saved to your Downloads folder as `xtend_<postId>_<mediaId>.mp4` in the best available quality.
+Open the **Share** menu of a post with a video or GIF and choose **Download video**. The file is saved to your Downloads folder as `xtend_<postId>_<mediaId>.mp4` in the best available quality; GIFs are saved as `xtend_<postId>_<mediaId>_gif.mp4` (X serves them as MP4).
 
 - On original posts this is X's own *Download video* item – Xtend takes it over.
 - On quote posts whose quoted post has a video, Xtend adds the item.
+- Reposts work the same way: a repost shows the original post, so its Share menu is the original's.
 
 **Copy link** and **Share post via …** in the Share menu give a clean post link: `https://x.com/<user>/status/<id>` without `?s=20`, `?a=…` or anything else after the path. Other links and text are left as they are.
 
@@ -70,6 +77,7 @@ extension/                 the folder you load in Chrome and zip for release
 design/                    icon sources (SVG) – see design/README.md
 docs/store-listing.md      Chrome Web Store texts and privacy answers
 scripts/package.mjs        reproducible release zip + checksums
+scripts/lib/zip.mjs        the zip writer package.mjs uses
 scripts/verify-store.mjs   compares a store / installed copy with a release
 scripts/sign-crx.sh        signs a release zip as .crx for verified uploads
 scripts/push_new_release.sh  asks for the version and pushes the release tag
@@ -128,11 +136,11 @@ workflow. By hand it is:
 
 ```sh
 git pull
-git tag -a v0.1.0 -m "Xtend 0.1.0"
-git push origin v0.1.0
+git tag -a vX.Y.Z -m "Xtend X.Y.Z"
+git push origin vX.Y.Z
 ```
 
-The release is titled "Xtend 0.1.0" and its run in the Actions tab "Xtend v0.1.0".
+The release is titled "Xtend X.Y.Z" and its run in the Actions tab "Xtend vX.Y.Z".
 
 GitHub Actions (`.github/workflows/release.yml`) runs all tests, builds the zip, signs the
 `.crx` with the store key (below), adds
@@ -154,8 +162,8 @@ that key, checked against `xtend-<version>.files.sha256` – which is what goes 
 To sign by hand instead (e.g. before the secret is set):
 
 ```sh
-scripts/sign-crx.sh ~/Downloads/xtend-0.1.0.zip ~/.xtend/signing-key.pem
-# → dist/xtend-0.1.0.crx – upload it with "Upload New Package"
+scripts/sign-crx.sh ~/Downloads/xtend-0.2.0.zip ~/.xtend/signing-key.pem
+# → dist/xtend-0.2.0.crx – upload it with "Upload New Package"
 ```
 
 The script refuses a key stored inside the repository; `*.pem` and `*.crx` are git-ignored.
@@ -173,13 +181,13 @@ repository. Only Node is needed.
 1. **Rebuild it** from the tag and compare the SHA-256 with the release page:
    ```sh
    git clone https://github.com/niewiemczego/Xtend && cd Xtend
-   git checkout v0.1.0
+   git checkout v0.2.0
    node scripts/package.mjs --no-tests
-   cat dist/xtend-0.1.0.zip.sha256
+   cat dist/xtend-0.2.0.zip.sha256
    ```
 2. **Check where the release zip was built** (GitHub CLI):
    ```sh
-   gh attestation verify xtend-0.1.0.zip --repo niewiemczego/Xtend
+   gh attestation verify xtend-0.2.0.zip --repo niewiemczego/Xtend
    ```
 3. **Compare the Chrome Web Store copy.** The store re-signs every package and adds a
    `_metadata/` folder, so its file never has the zip's SHA-256 – but every file inside must be
@@ -187,7 +195,7 @@ repository. Only Node is needed.
    `chrome://extensions` → Developer mode → the extension's ID; the folder is in your profile's
    `Extensions/<id>/<version>/`) or at a downloaded `.crx`:
    ```sh
-   node scripts/verify-store.mjs <installed folder or .crx> xtend-0.1.0.files.sha256
+   node scripts/verify-store.mjs <installed folder or .crx> xtend-0.2.0.files.sha256
    ```
    `OK – all N files match the release` means the store serves exactly the released code.
    `_metadata/` is ignored, and so are the `update_url` / `key` entries the store or browser may
