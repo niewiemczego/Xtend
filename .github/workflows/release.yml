@@ -57,7 +57,17 @@ jobs:
           key="$RUNNER_TEMP/xtend-signing-key.pem"
           trap 'rm -f "$key"' EXIT
           (umask 077 && printf '%s\n' "$CWS_SIGNING_KEY" > "$key")
-          openssl rsa -in "$key" -check -noout > /dev/null
+          # Say what is wrong with the secret without ever printing it (only the PEM header line).
+          header="$(grep -m1 -- '-----BEGIN' "$key" || true)"
+          case "$header" in
+            *"PUBLIC KEY"*) echo "::error::CWS_SIGNING_KEY holds a PUBLIC key. Put the PRIVATE key there (the whole ~/.xtend/signing-key.pem); the public key goes into the Chrome Web Store dashboard." >&2; exit 1 ;;
+            *"ENCRYPTED"*) echo "::error::CWS_SIGNING_KEY is an encrypted private key. Use an unencrypted PEM (openssl genpkey … without -aes256)." >&2; exit 1 ;;
+            *"PRIVATE KEY"*) ;;
+            "") echo "::error::CWS_SIGNING_KEY is not a PEM key (no -----BEGIN line). Paste the whole file, including the BEGIN/END lines." >&2; exit 1 ;;
+            *) echo "::error::CWS_SIGNING_KEY starts with an unexpected PEM header: $header" >&2; exit 1 ;;
+          esac
+          grep -q -- '-----END' "$key" || { echo "::error::CWS_SIGNING_KEY is cut off (no -----END line). Paste the whole file." >&2; exit 1; }
+          openssl pkey -in "$key" -noout 2> /dev/null || { echo "::error::CWS_SIGNING_KEY could not be read as a private key – paste the whole ~/.xtend/signing-key.pem again." >&2; exit 1; }
           scripts/sign-crx.sh "dist/xtend-$VERSION.zip" "$key"
 
       - name: Build provenance
