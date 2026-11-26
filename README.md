@@ -75,6 +75,7 @@ extension/                 the folder you load in Chrome and zip for release
     service-worker.js      saves files with chrome.downloads
   icons/                   16 / 32 / 48 / 128 px PNGs (generated from design/)
 design/                    icon sources (SVG) – see design/README.md
+  store/                   Chrome Web Store screenshots and promo tile
 docs/store-listing.md      Chrome Web Store texts and privacy answers
 scripts/package.mjs        reproducible release zip + checksums
 scripts/lib/zip.mjs        the zip writer package.mjs uses

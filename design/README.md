@@ -21,3 +21,14 @@ rsvg-convert -w 48 -h 48 design/icon.svg    -o extension/icons/icon-48.png
 rsvg-convert -w 96 -h 96 design/icon.svg    -o /tmp/icon-96.png
 magick /tmp/icon-96.png -background none -gravity center -extent 128x128 extension/icons/icon-128.png
 ```
+
+## Store graphics
+
+`store/` keeps the Chrome Web Store graphics so they don't get lost – what each one is and
+where it goes is listed in [`docs/store-listing.md`](../docs/store-listing.md#graphics).
+
+| File | Size | What |
+| --- | --- | --- |
+| `store/screenshot-download-video.png` | 1280 × 800 | Share menu with **Download video** highlighted |
+| `store/screenshot-clean-links.png` | 1280 × 800 | **Copy link** highlighted, link before / after cleaning |
+| `store/promo-tile-small.png` | 157 × 100 | small promo tile preview (the store wants 440 × 280) |

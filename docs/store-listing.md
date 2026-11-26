@@ -58,10 +58,13 @@ Source code and issue tracker: https://github.com/niewiemczego/Xtend
 | Asset | Size | File / to do |
 | --- | --- | --- |
 | Store icon | 128 × 128 | `extension/icons/icon-128.png` (96 px artwork + 16 px padding) |
-| Screenshots (1–5) | 1280 × 800 or 640 × 400 | **to take in the browser**, see below |
-| Small promo tile (optional) | 440 × 280 | – |
+| Screenshots (1–5) | 1280 × 800 or 640 × 400 | `design/store/screenshot-download-video.png`, `design/store/screenshot-clean-links.png` |
+| Small promo tile (optional) | 440 × 280 | `design/store/promo-tile-small.png` – only a 157 × 100 preview so far; the 440 × 280 file is still needed |
 
-Screenshots to take (light theme, a public post, nothing personal in view – no own handle,
+Upload the screenshots in this order: `screenshot-download-video.png` (Download video in the Share
+menu), then `screenshot-clean-links.png` (Copy link without tracking parameters).
+
+More screenshots to consider (light theme, a public post, nothing personal in view – no own handle,
 DMs or notifications):
 
 1. The Share menu open on a video post with **Download video** highlighted
