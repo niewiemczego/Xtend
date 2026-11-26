@@ -64,6 +64,8 @@ extension/                 the folder you load in Chrome and zip for release
     service-worker.js      saves files with chrome.downloads
   icons/                   16 / 32 / 48 / 128 px PNGs (generated from design/)
 design/                    icon sources (SVG) – see design/README.md
+docs/store-listing.md      Chrome Web Store texts and privacy answers
+scripts/package.sh         builds the release zip
 tests/
   *.test.js                node --test
   helpers/                 fake window for running extension scripts in Node
@@ -89,6 +91,16 @@ python3 -m http.server 8000
 ```
 
 Every test runs against the captures in `tests/fixtures/` – see its README for what each file is.
+
+## Release
+
+```sh
+scripts/package.sh   # runs the tests, then builds dist/xtend-<version>.zip from extension/
+```
+
+The version comes from `extension/manifest.json` – bump it before every release. Store texts,
+permission justifications and the screenshot list are in [`docs/store-listing.md`](docs/store-listing.md);
+the privacy policy is [`PRIVACY.md`](PRIVACY.md).
 
 ## License
 
