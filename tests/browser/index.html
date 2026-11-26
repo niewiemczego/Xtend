@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Xtend – DOM tests</title>
+    <style>
+      body { font: 14px/1.5 -apple-system, system-ui, sans-serif; margin: 2rem; color: #0f1419; }
+      h1 { font-size: 1.25rem; margin: 0 0 1rem; }
+      #summary { font-weight: 600; margin-bottom: 1rem; }
+      .pass { color: #00873c; }
+      .fail { color: #c4161c; }
+      li { margin: 0.2rem 0; }
+      pre { margin: 0.2rem 0 0.6rem 1.2rem; white-space: pre-wrap; color: #c4161c; }
+    </style>
+  </head>
+  <body>
+    <h1>Xtend – DOM tests on tests/fixtures/html</h1>
+    <div id="summary">Running…</div>
+    <ol id="results"></ol>
+
+    <!-- The extension's content scripts, in manifest order (no chrome.* needed for these). -->
+    <script src="../../extension/shared/video-media.js"></script>
+    <script src="../../extension/content/selectors.js"></script>
+    <script src="../../extension/content/post.js"></script>
+
+    <script src="runner.js"></script>
+    <script src="post.dom.js"></script>
+    <script>
+      run();
+    </script>
+  </body>
+</html>

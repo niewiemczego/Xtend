@@ -35,16 +35,29 @@ extension/                 the folder you load in Chrome and zip for release
     service-worker.js      saves files with chrome.downloads
 tests/
   *.test.js                node --test
+  helpers/                 fake window for running extension scripts in Node
+  browser/                 DOM tests (*.dom.js) – open in a browser
   fixtures/                HTML and JSON captured from x.com
 ```
 
 ## Tests
 
-Uses Node's built-in test runner – nothing to install (Node 20+):
+Nothing to install.
+
+**Logic** (parser, interceptor, video store) – Node's built-in test runner (Node 20+):
 
 ```sh
 node --test
 ```
+
+**DOM** (selectors, post detection on the captured HTML) – a plain test page:
+
+```sh
+python3 -m http.server 8000
+# open http://localhost:8000/tests/browser/ in Search, Safari or Chrome
+```
+
+Every test runs against the captures in `tests/fixtures/` – see its README for what each file is.
 
 ## License
 

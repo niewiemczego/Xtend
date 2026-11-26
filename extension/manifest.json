@@ -30,6 +30,7 @@
         "https://mobile.x.com/*"
       ],
       "js": [
+        "shared/video-media.js",
         "content/selectors.js",
         "content/post.js",
         "content/video-store.js",
