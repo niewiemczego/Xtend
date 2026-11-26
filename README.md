@@ -70,6 +70,7 @@ scripts/verify-store.mjs   compares a store / installed copy with a release
 scripts/sign-crx.sh        signs a release zip as .crx for verified uploads
 scripts/push_new_release.sh  asks for the version and pushes the release tag
 .github/workflows/         CI (tests, build) and tagged releases
+CLAUDE.md                  project rules for contributors and coding agents
 tests/
   *.test.js                node --test
   helpers/                 fake window for running extension scripts in Node
