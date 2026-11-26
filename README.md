@@ -25,7 +25,7 @@ Open the **Share** menu of a post with a video or GIF and choose **Download vide
 
 - On original posts this is X's own *Download video* item – Xtend takes it over.
 - On quote posts whose quoted post has a video, Xtend adds the item.
-- Reposts are not supported.
+- Reposts work the same way: a repost shows the original post, so its Share menu is the original's.
 
 **Copy link** and **Share post via …** in the Share menu give a clean post link: `https://x.com/<user>/status/<id>` without `?s=20`, `?a=…` or anything else after the path. Other links and text are left as they are.
 

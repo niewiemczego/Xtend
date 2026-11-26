@@ -18,7 +18,7 @@ Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds sm
 
 ## Behaviour to keep
 
-- Original post: our item takes over X's native "Download video" entry. Quote post: our item is added. Reposts are not supported (by decision, not by accident).
+- Original post: our item takes over X's native "Download video" entry. Quote post: our item is added. Reposts need nothing extra: a repost shows the original post, so the same code handles it (confirmed by the owner, 2026-11-26).
 - `allow_download = false` still downloads; just log it in debug mode.
 - GIFs are saved as `.mp4`, named `xtend_<tweetId>_<mediaId>_gif.mp4`; videos `xtend_<tweetId>_<mediaId>.mp4`.
 - Only `https://video.twimg.com/` URLs are ever downloaded. The service worker validates the sender, the URL and the IDs; keep those checks.
