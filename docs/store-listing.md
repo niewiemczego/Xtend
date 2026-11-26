@@ -102,8 +102,10 @@ https://github.com/niewiemczego/Xtend/blob/main/PRIVACY.md
 ## Package
 
 ```sh
-scripts/package.sh   # runs the tests, then builds dist/xtend-<version>.zip from extension/
+node scripts/package.mjs   # runs the tests, then builds dist/xtend-<version>.zip from extension/
 ```
 
-Upload `dist/xtend-<version>.zip` in the *Package* tab. Bump `version` in
-`extension/manifest.json` before every new upload – the store rejects a version it has seen.
+For a release, upload the `xtend-<version>.zip` attached to the GitHub release (built by
+GitHub Actions from the tag) in the *Package* tab, so the store copy can be checked against it
+(README → *Verify a release*). Bump `version` in `extension/manifest.json` before every new
+upload – the store rejects a version it has seen.
