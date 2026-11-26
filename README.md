@@ -107,11 +107,17 @@ The build is **reproducible**: entries are sorted, stored uncompressed, dated 19
 marked 0644, so the same files always give a byte-identical zip. Next to the zip it writes
 `xtend-<version>.zip.sha256` and `xtend-<version>.files.sha256` (one line per file inside).
 
-To publish, bump `version` in `extension/manifest.json`, merge, then push a matching tag:
+To publish, bump `version` in `extension/manifest.json`, merge, then push a matching
+**annotated** tag – its message is what GitHub shows on the Tags page (a plain tag shows the
+last commit's message, e.g. "Merge pull request …"):
 
 ```sh
-git tag v0.1.0 && git push origin v0.1.0
+git pull
+git tag -a v0.1.0 -m "Xtend 0.1.0"
+git push origin v0.1.0
 ```
+
+The release is titled "Xtend 0.1.0" and its run in the Actions tab "Xtend v0.1.0".
 
 GitHub Actions (`.github/workflows/release.yml`) runs all tests, builds the zip, signs the
 `.crx` with the store key (below), adds

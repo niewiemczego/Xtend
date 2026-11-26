@@ -1,7 +1,9 @@
 name: Release
+# Shown in the Actions list instead of the tagged commit's message ("Merge pull request …")
+run-name: Xtend ${{ github.ref_name }}
 
-# Push a tag that matches the manifest version to publish a release:
-#   git tag v0.1.0 && git push origin v0.1.0
+# Push an annotated tag that matches the manifest version to publish a release:
+#   git tag -a v0.1.0 -m "Xtend 0.1.0" && git push origin v0.1.0
 
 on:
   push:
