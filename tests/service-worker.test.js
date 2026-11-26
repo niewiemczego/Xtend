@@ -43,10 +43,11 @@ function loadWorker(mode = 'callback') {
   };
   if (mode === 'missing') delete chrome.downloads;
   // Time limits fire right away, so 'hang' doesn't make the test wait 15 s.
+  const logs = [];
   const ctx = {
     chrome,
     URL,
-    console: { log() {} },
+    console: { log: (...args) => logs.push(args.join(' ')) },
     setTimeout: (fn) => setTimeout(fn, 0),
     clearTimeout,
   };
@@ -61,7 +62,7 @@ function loadWorker(mode = 'callback') {
       if (keepOpen !== true) resolve(undefined);
     });
 
-  return { worker: ctx.XtendBackground, downloads, send, listeners };
+  return { worker: ctx.XtendBackground, downloads, send, listeners, logs };
 }
 
 // A real VideoItem from the captured TweetResultByRestId response
@@ -114,6 +115,17 @@ describe('download message', () => {
     const { send } = loadWorker();
     const reply = await send({ type: 'xtend:download', video }, { id: EXTENSION_ID, url: 'https://twitter.com/home' });
     assert.equal(reply.ok, true);
+  });
+
+  test('logs nothing unless the message asks for debug output', async () => {
+    const quiet = loadWorker();
+    await quiet.send({ type: 'xtend:download', video });
+    assert.deepEqual(quiet.logs, []);
+
+    const verbose = loadWorker();
+    await verbose.send({ type: 'xtend:download', video, debug: true });
+    assert.ok(verbose.logs.length >= 2, verbose.logs.join('\n'));
+    assert.ok(verbose.logs.every((line) => line.startsWith('[xtend]')));
   });
 
   test('answers a ping right away', async () => {

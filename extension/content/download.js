@@ -1,5 +1,6 @@
-// Downloading a post's videos: resolve the MP4 links, hand them to the service worker,
-// and report progress and the result in a toast. Started from the Share menu.
+// Downloading a post's videos: resolve the MP4 links and hand them to the service worker.
+// Started from the Share menu. Nothing is shown on the page – progress and errors go to the
+// console in debug mode (content/debug.js).
 
 (function () {
   'use strict';
@@ -18,13 +19,7 @@
   const PING_TIMEOUT_MS = 5000;
   const DOWNLOAD_TIMEOUT_MS = 20000;
 
-  function debug(...args) {
-    try {
-      if (localStorage.getItem('xtendDebug') === '1') console.debug('[xtend]', ...args);
-    } catch (_) {
-      // no localStorage – no debug output
-    }
-  }
+  const log = (...args) => Xtend.debug.log(...args);
 
   function errorMessage(error) {
     const text = String((error && error.message) || error || 'Unknown error');
@@ -69,7 +64,7 @@
   /** Is the service worker running and answering? */
   async function pingWorker() {
     const reply = await Xtend.download.send(
-      { type: 'xtend:ping' },
+      { type: 'xtend:ping', debug: Xtend.debug.enabled() },
       {
         timeoutMs: PING_TIMEOUT_MS,
         timeoutMessage: "Xtend's background script isn't answering (no reply to ping).",
@@ -92,26 +87,26 @@
         missing ? "X hasn't sent this video yet – open the post or scroll it into view, then try again." : 'No video in this post.',
       );
     }
-    debug('downloading', items);
+    log('downloading', items);
     await pingWorker();
-    debug('background script answered the ping');
+    log('background script answered the ping');
 
     let saved = 0;
     let lastError = null;
     for (const video of items) {
       try {
         const reply = await Xtend.download.send(
-          { type: 'xtend:download', video },
+          { type: 'xtend:download', video, debug: Xtend.debug.enabled() },
           {
             timeoutMs: DOWNLOAD_TIMEOUT_MS,
             timeoutMessage: "Xtend's background script didn't report back on the download (timed out).",
           },
         );
-        debug('download reply', reply);
+        log('download reply', reply);
         if (reply && reply.ok) saved++;
         else lastError = new Error((reply && reply.error) || 'Download failed (empty reply).');
       } catch (error) {
-        debug('download error', error);
+        log('download error', error);
         lastError = error;
       }
     }
@@ -122,21 +117,21 @@
   const busy = new WeakSet();
 
   /**
-   * Downloads a post's videos and reports in a toast. A second call for the same post while
-   * it is still downloading is ignored. Resolves when done (never rejects).
+   * Downloads a post's videos. A second call for the same post while it is still downloading
+   * is ignored. Never rejects; the outcome is logged in debug mode and returned:
+   * { ok: true, saved, authorDisabled } | { ok: false, error } | { ok: false, skipped: true }
    */
   async function start(post) {
-    if (!post || busy.has(post)) return;
+    if (!post || busy.has(post)) return { ok: false, skipped: true };
     busy.add(post);
-    const doc = post.ownerDocument;
-    Xtend.toast.show('Downloading…', 'busy', doc);
     try {
       const { saved, authorDisabled } = await downloadPost(post);
-      let text = saved > 1 ? `Saved ${saved} videos` : 'Saved';
-      if (authorDisabled) text += ' – note: the author turned off downloads for this video';
-      Xtend.toast.show(text, 'ok', doc);
+      log(`saved ${saved} video(s)` + (authorDisabled ? ' – the author turned off downloads for this video' : ''));
+      return { ok: true, saved, authorDisabled };
     } catch (error) {
-      Xtend.toast.show(errorMessage(error), 'error', doc);
+      const message = errorMessage(error);
+      Xtend.debug.warn('download failed:', message);
+      return { ok: false, error: message };
     } finally {
       busy.delete(post);
     }

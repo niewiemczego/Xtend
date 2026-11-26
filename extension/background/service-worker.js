@@ -16,8 +16,10 @@
   const PAGE_ORIGINS = ['https://x.com', 'https://twitter.com', 'https://mobile.x.com'];
   const DOWNLOAD_TIMEOUT_MS = 15000;
 
+  // Logs only for messages sent with { debug: true } (the page's debug mode, see README).
+  let debugMessage = false;
   function log(...args) {
-    console.log('[xtend]', ...args);
+    if (debugMessage) console.log('[xtend]', ...args);
   }
 
   /** e.g. xtend_2125387364696756699_2125387308996468736.mp4 – no folders (not every browser allows them). */
@@ -101,6 +103,7 @@
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!message) return false;
+    debugMessage = message.debug === true;
     if (message.type === 'xtend:ping') {
       sendResponse({ ok: true });
       return false;
@@ -110,7 +113,6 @@
     return true; // reply asynchronously
   });
 
-  log('service worker ready');
 
   // For tests
   self.XtendBackground = { buildFilename, validate, handleDownload, DOWNLOAD_TIMEOUT_MS };

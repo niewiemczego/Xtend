@@ -78,22 +78,12 @@
     return added;
   }
 
-  function debugEnabled() {
-    try {
-      return localStorage.getItem('xtendDebug') === '1';
-    } catch (_) {
-      return false;
-    }
-  }
-
   function onMessage(event) {
     if (event.source !== window || event.origin !== location.origin) return;
     const data = event.data;
     if (!data || data.source !== 'xtend' || data.type !== 'videos') return;
     const added = add(data.items);
-    if (added && debugEnabled()) {
-      console.debug(`[xtend] +${added} video(s), ${items.size} stored`);
-    }
+    if (added && Xtend.debug) Xtend.debug.log(`+${added} video(s), ${items.size} stored`);
   }
 
   let listening = false;

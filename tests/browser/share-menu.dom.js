@@ -94,9 +94,7 @@
     assert.deepEqual(closed, ['Escape'], 'menu asked to close');
     assert.equal(sent.length, 1);
     assert.equal(sent[0].video.url, item.url);
-    const toast = doc.querySelector(`.${Xtend.toast.CLASS}`);
-    assert.ok(toast && toast.dataset.kind === 'ok', 'result shown in the toast');
-    assert.equal(doc.querySelectorAll('.xtend-download').length, 0, 'no action-bar button anymore');
+    assert.equal(doc.querySelectorAll('.xtend-download').length, 0, 'no action-bar button');
   });
 
   test("menu: Enter and Space on X's item download too", async () => {
