@@ -137,18 +137,10 @@ describe('end to end: interceptor → postMessage → store', () => {
       deliverMessages: true,
       fetch: async () => ({ ok: true, clone: () => ({ json: async () => api('HomeTimeline') }) }),
     });
-    load(
-      win,
-      'shared/video-media.js',
-      'page/interceptor.js',
-      'content/selectors.js',
-      'content/post.js',
-      'content/video-store.js',
-      'content/video-resolver.js',
-      'content/download-button.js',
-      'content/share-menu.js',
-      'content/main.js',
-    );
+    // Page world + the store. main.js (which also starts the DOM observer) is covered by
+    // the browser tests; here the listener is started the same way main.js does it.
+    load(win, 'shared/video-media.js', 'page/interceptor.js', 'content/video-store.js');
+    win.Xtend.videoStore.listen();
     await win.fetch('https://x.com/i/api/graphql/abc/HomeTimeline');
     await flush();
     assert.equal(win.Xtend.videoStore.size, 22);

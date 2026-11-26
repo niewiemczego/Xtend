@@ -1,1 +1,19 @@
-/* Styles for the download button and the Share menu item – see #10 and #11. */
+/* Download button (#10). Size, padding and hover come from X's own classes
+   (the button is a clone of X's Share button); only the colour and states are ours. */
+
+.xtend-download:not(:hover) {
+  color: #999999;
+}
+
+.xtend-download.xtend-busy {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.xtend-download.xtend-ok.xtend-ok {
+  color: rgb(0, 186, 124);
+}
+
+.xtend-download.xtend-error.xtend-error {
+  color: rgb(244, 33, 46);
+}
