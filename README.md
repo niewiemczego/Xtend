@@ -113,27 +113,33 @@ To publish, bump `version` in `extension/manifest.json`, merge, then push a matc
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-GitHub Actions (`.github/workflows/release.yml`) runs all tests, builds the zip, signs a
+GitHub Actions (`.github/workflows/release.yml`) runs all tests, builds the zip, signs the
+`.crx` with the store key (below), adds
 [build provenance](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations)
-attestation and creates the GitHub release with the zip and both checksum files. The same zip
-goes to the Chrome Web Store. Store texts, permission justifications and the screenshot list
+attestations for both and creates the GitHub release with the zip, the `.crx` and both checksum
+files. The `.crx` goes to the Chrome Web Store. Store texts, permission justifications and the screenshot list
 are in [`docs/store-listing.md`](docs/store-listing.md); the privacy policy is
 [`PRIVACY.md`](PRIVACY.md).
 
 ### Signed uploads (Chrome Web Store "Verified CRX uploads")
 
-Once verified uploads are turned on in the dashboard (*Package* → *Verified CRX Uploads*), every
-update must be a `.crx` signed with your private key. Sign the zip from the GitHub release:
+Releases are signed in CI. The private key is the repository secret **`CWS_SIGNING_KEY`**
+(the PEM text: *Settings → Secrets and variables → Actions → New repository secret*, or
+`gh secret set CWS_SIGNING_KEY < ~/.xtend/signing-key.pem`). The release workflow writes it to
+the runner's temp folder only while signing, deletes it right after, and refuses to release
+without it. Each release then has `xtend-<version>.crx` – the release zip's files signed with
+that key, checked against `xtend-<version>.files.sha256` – which is what goes to the store.
+
+To sign by hand instead (e.g. before the secret is set):
 
 ```sh
-scripts/sign-crx.sh ~/Downloads/xtend-0.1.1.zip ~/xtend-signing-key.pem
-# → dist/xtend-0.1.1.crx – upload it with "Upload New Package"
+scripts/sign-crx.sh ~/Downloads/xtend-0.1.0.zip ~/.xtend/signing-key.pem
+# → dist/xtend-0.1.0.crx – upload it with "Upload New Package"
 ```
 
-With the release's `.zip.sha256` and `.files.sha256` next to the zip, the script checks the zip
-before signing and the signed `.crx` after, so the store gets exactly the released files. It
-refuses a key stored inside the repository; `*.pem` and `*.crx` are git-ignored. Keep the key
-in a password manager with an offline backup – replacing a lost key goes through store support.
+The script refuses a key stored inside the repository; `*.pem` and `*.crx` are git-ignored.
+Keep the key in a password manager with an offline backup – replacing a lost key goes through
+store support.
 
 Every push and pull request runs `.github/workflows/ci.yml`: unit tests, DOM tests in headless
 Chrome, the package build, a reproducibility check and the checksum check.
