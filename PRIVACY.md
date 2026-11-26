@@ -3,7 +3,8 @@
 _Last updated: 2026-11-26_
 
 Xtend is a browser extension that adds small tools to social media sites. Today it lets you
-save videos and GIFs from X (x.com) through the post's Share menu.
+save videos and GIFs from X (x.com) through the post's Share menu, and removes tracking
+parameters from the post links that menu copies or shares.
 
 ## The short version
 
@@ -17,6 +18,10 @@ browser, on the page you are looking at.
   doesn't read anything else from these responses for its own use.
 - **The page itself.** Xtend looks at the post you opened the Share menu on, to know which
   video to save.
+- **The link X copies or shares.** When X puts a post link on your clipboard (*Copy link*) or
+  hands it to your system's share sheet (*Share post via …*), Xtend sees that text on its way
+  out and, if it is a post link, removes the part after the path (e.g. `?s=20`). Anything
+  else is passed on unchanged. Xtend never reads your clipboard and keeps nothing of it.
 
 ## What Xtend stores
 
@@ -42,7 +47,7 @@ for: your browser's download manager saves the video from X's video server
 | Permission | Why |
 | --- | --- |
 | `downloads` | To save the video you chose to your Downloads folder. |
-| Access to `x.com`, `twitter.com`, `mobile.x.com` | To add *Download video* to the Share menu and read the video addresses on those sites. Xtend runs on no other site. |
+| Access to `x.com`, `twitter.com`, `mobile.x.com` | To add *Download video* to the Share menu, read the video addresses and clean the post links X copies or shares on those sites. Xtend runs on no other site. |
 
 ## Changes
 

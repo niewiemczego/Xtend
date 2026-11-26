@@ -5,6 +5,7 @@ See [#2](https://github.com/niewiemczego/Xtend/issues/2) for the list of files t
 
 - `html/` – `outerHTML` of posts and menus
 - `api/` – raw GraphQL JSON responses
+- `share/` – what X passes to the clipboard and share-sheet APIs
 
 Record the capture date next to each file below – X changes its markup often.
 Remove anything personal (own handle, avatar, DMs, tokens) before committing. In the status-page
@@ -25,6 +26,7 @@ captures the signed-in account (reply box avatar) is replaced with `me` / `profi
 | `api/TweetResultByRestId.json`         | GraphQL `TweetResultByRestId` of a single video post               | 2026-11-26 |
 
 | `api/HomeTimeline.json`                | GraphQL `HomeTimeline`: 49 posts, 21 videos, 1 GIF, 11 quotes, no reposts | 2026-11-26 |
+| `share/post-links.json`                | Share menu *Copy link* / *Share post via …*: the call X makes, its argument and the clean link | 2026-11-26 |
 
 API files are pretty-printed for readable diffs. `HomeTimeline.json` has the signed-in viewer's
 relationship fields removed (`relationship_perspectives`, `following`, `super_*`,
@@ -37,6 +39,16 @@ doesn't need them.
 - Each `media_entities2` item: `id_str` (= number in the poster URL), `type` (`video` / `animated_gif` / `photo`), `media_url_https` (poster), `video_info.variants[]` (`content_type`, `bitrate`, `url`; one HLS + several MP4) and `allow_download_status.allow_download`.
 - Quoted posts: `quoted_tweet_results.result` (and `nested_quoted_tweet_results.result`) with the same shape.
 - MP4 variant URLs carry a query string (`…/vid/avc1/710x524/<hash>.mp4?tag=29`); the resolution is in the path.
+
+## What the share calls look like (2026-11-26)
+
+- *Copy link* calls `navigator.clipboard.writeText(link)`; *Share post via …* calls
+  `navigator.share({ url: link })`. Same for the focal post of a status page and for a post in
+  the timeline layout (`role="link"` + `data-href`, captured on a reply in a thread).
+- Signed out the link is `https://x.com/<user>/status/<id>?s=20`. Signed in X adds the sharer:
+  `?a=<id>&s=20` (from #45; the value in the fixture is replaced, it identifies the account).
+- X shows *Share post via …* only when the browser has `navigator.share`; it was captured with
+  a stub that records the call.
 
 ## What the markup looks like (2026-11-26)
 

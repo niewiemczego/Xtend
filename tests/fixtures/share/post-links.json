@@ -1,0 +1,29 @@
+{
+  "captured": "2026-11-26",
+  "calls": [
+    {
+      "what": "Copy link on the focal post of a status page, signed out",
+      "api": "navigator.clipboard.writeText",
+      "args": ["https://x.com/uwukko/status/2101031299884404830?s=20"],
+      "clean": "https://x.com/uwukko/status/2101031299884404830"
+    },
+    {
+      "what": "Copy link on a reply in the thread (timeline layout, role=link data-href), signed out",
+      "api": "navigator.clipboard.writeText",
+      "args": ["https://x.com/uwukko/status/2101031407044694140?s=20"],
+      "clean": "https://x.com/uwukko/status/2101031407044694140"
+    },
+    {
+      "what": "Share post via … on the same reply, signed out",
+      "api": "navigator.share",
+      "args": [{ "url": "https://x.com/uwukko/status/2101031407044694140?s=20" }],
+      "clean": "https://x.com/uwukko/status/2101031407044694140"
+    },
+    {
+      "what": "Copy link, signed in (example from issue #45; the sharer ID in `a` is replaced)",
+      "api": "navigator.clipboard.writeText",
+      "args": ["https://x.com/uwukko/status/2101031299884404830?a=xxxxxxxxxxxxxxxxxxx&s=20"],
+      "clean": "https://x.com/uwukko/status/2101031299884404830"
+    }
+  ]
+}
