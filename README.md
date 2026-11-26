@@ -1,6 +1,6 @@
 # Xtend
 
-Xtend is a lightweight browser extension that adds the features X is missing for free. Download any video or GIF in the best available quality with one click, right from the Share menu – including quoted posts. No accounts, no tracking, no third-party servers. Not affiliated with X Corp.
+**Xtend: Social Media Toolkit** – a lightweight browser extension that adds the small features social media sites are missing. Today: save any video or GIF from X in the best available quality, right from the Share menu – including quoted posts. More platforms and tools to come. No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
 
 > Status: work in progress – see the [v0.1 tracking issue](https://github.com/niewiemczego/Xtend/issues/15).
 
@@ -62,6 +62,8 @@ extension/                 the folder you load in Chrome and zip for release
     content.css
   background/
     service-worker.js      saves files with chrome.downloads
+  icons/                   16 / 32 / 48 / 128 px PNGs (generated from design/)
+design/                    icon sources (SVG) – see design/README.md
 tests/
   *.test.js                node --test
   helpers/                 fake window for running extension scripts in Node
