@@ -47,4 +47,15 @@ Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds sm
 - Don't touch branches, stashes or PRs you didn't create; mention them instead.
 - The version lives in `extension/manifest.json`. Release only with `scripts/push_new_release.sh` (tag `vX.Y.Z` must equal the manifest version). CI builds the reproducible zip, signs the `.crx`, attests both and publishes the GitHub release.
 - Don't change `scripts/package.mjs` or `scripts/lib/zip.mjs` in a way that alters the output for the same input – people verify store copies against the published SHA-256 sums.
-- Keep `README.md`, `PRIVACY.md` and `docs/store-listing.md` in sync with what the extension actually does.
+
+## Docs
+
+Docs are part of the change, not a follow-up: update them in the same PR, and say in the PR description which ones you touched (or why none needed it). Check each of these:
+
+- `README.md` – Usage, Troubleshooting (debug mode), Project layout (every added, moved or removed file), Tests, Release and Verify sections, and any command that changed.
+- `PRIVACY.md` – anything about what the extension reads, stores, sends or downloads.
+- `docs/store-listing.md` – the store description, permission justifications and data-usage answers. If these change, the Chrome Web Store dashboard has to be updated by hand too: say so in the PR.
+- `extension/manifest.json` `description` – must still match what the extension does (max 132 characters).
+- `tests/fixtures/README.md` – every capture and what it covers.
+- `design/README.md` – how the icons are made, if they change.
+- `CLAUDE.md` – when a rule or decision changes, update it here too.
