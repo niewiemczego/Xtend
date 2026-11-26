@@ -46,3 +46,11 @@ test('permissions stay minimal', () => {
   assert.deepEqual(manifest.permissions, ['downloads']);
   assert.equal(manifest.host_permissions, undefined);
 });
+
+test("store name and short name fit Chrome's limits", () => {
+  assert.equal(manifest.name, 'Xtend: Video Downloader & More');
+  assert.ok(manifest.name.length <= 75, 'name ≤ 75 characters');
+  assert.equal(manifest.short_name, 'Xtend');
+  assert.ok(manifest.short_name.length <= 12, 'short_name ≤ 12 characters');
+  assert.ok(manifest.description.length <= 132, 'description ≤ 132 characters');
+});

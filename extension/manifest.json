@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Xtend for X",
+  "name": "Xtend: Video Downloader & More",
+  "short_name": "Xtend",
   "version": "0.1.0",
-  "description": "Download any video or GIF from X in the best available quality.",
+  "description": "Save videos and GIFs from your feed in the best available quality, right from the Share menu. More tools to come.",
   "permissions": [
     "downloads"
   ],
