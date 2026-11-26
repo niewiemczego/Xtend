@@ -33,10 +33,14 @@
     return { ...realItem, tweetId: TIMELINE.tweetId, mediaId: TIMELINE.mediaId, ...extra };
   }
 
-  /** Replaces the service-worker call for one test; returns the list of sent messages. */
+  /**
+   * Replaces the service-worker call for one test. Pings are answered with { ok: true };
+   * returns the list of download messages sent.
+   */
   function fakeWorker(reply = (message) => ({ ok: true, filename: 'x.mp4', downloadId: 1, message })) {
     const sent = [];
     B.send = async (message) => {
+      if (message.type === 'xtend:ping') return { ok: true };
       sent.push(message);
       return typeof reply === 'function' ? reply(message) : reply;
     };
@@ -190,6 +194,7 @@
     const sent = [];
     let finish;
     B.send = (message) => {
+      if (message.type === 'xtend:ping') return Promise.resolve({ ok: true });
       sent.push(message);
       return new Promise((resolve) => (finish = () => resolve({ ok: true })));
     };
@@ -221,5 +226,73 @@
     button.click();
     await settle();
     assert.deepEqual(reached, []);
+  });
+
+  // --- talking to the service worker ------------------------------------------------------
+
+  test("click: background script doesn't answer the ping → says so, nothing sent", async () => {
+    Xtend.videoStore.clear();
+    Xtend.videoStore.add([await timelineItem()]);
+    const sent = [];
+    B.send = async (message) => {
+      if (message.type === 'xtend:ping') throw new Error("Xtend's background script isn't answering (no reply to ping).");
+      sent.push(message);
+      return { ok: true };
+    };
+    const { bar, post } = await barAndPost('post-original-timeline.html');
+    const button = B.ensure(bar, post);
+    button.click();
+    await settle();
+    assert.equal(sent.length, 0);
+    assert.ok(button.classList.contains('xtend-error'));
+    assert.ok(/isn't answering/.test(button.title), button.title);
+  });
+
+  test('sendToWorker: no reply → rejects with the given message after the time limit', async () => {
+    const silent = { sendMessage() {} };
+    let error = null;
+    try {
+      await B.sendToWorker({ type: 'xtend:ping' }, { runtime: silent, timeoutMs: 20, timeoutMessage: 'too slow' });
+    } catch (e) {
+      error = e;
+    }
+    assert.equal(error && error.message, 'too slow');
+  });
+
+  test('sendToWorker: callback reply, promise reply and lastError', async () => {
+    const callbackRuntime = { sendMessage: (_m, cb) => cb({ ok: true, via: 'callback' }) };
+    assert.equal((await B.sendToWorker({}, { runtime: callbackRuntime, timeoutMs: 1000 })).via, 'callback');
+
+    const promiseRuntime = { sendMessage: () => Promise.resolve({ ok: true, via: 'promise' }) };
+    assert.equal((await B.sendToWorker({}, { runtime: promiseRuntime, timeoutMs: 1000 })).via, 'promise');
+
+    const failing = {
+      lastError: null,
+      sendMessage(_m, cb) {
+        failing.lastError = { message: 'Could not establish connection.' };
+        cb(undefined);
+        failing.lastError = null;
+      },
+    };
+    let error = null;
+    try {
+      await B.sendToWorker({}, { runtime: failing, timeoutMs: 1000 });
+    } catch (e) {
+      error = e;
+    }
+    assert.equal(error && error.message, 'Could not establish connection.');
+  });
+
+  test('sendToWorker: a late reply after the time limit is ignored', async () => {
+    let late;
+    const slow = { sendMessage: (_m, cb) => (late = cb) };
+    let error = null;
+    try {
+      await B.sendToWorker({}, { runtime: slow, timeoutMs: 10, timeoutMessage: 'timed out' });
+    } catch (e) {
+      error = e;
+    }
+    late({ ok: true }); // must not throw or resolve anything
+    assert.equal(error && error.message, 'timed out');
   });
 }

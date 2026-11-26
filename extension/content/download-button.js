@@ -33,20 +33,62 @@
     return /context invalidated/i.test(text) ? 'Xtend was updated – refresh the page.' : text;
   }
 
-  /** chrome.runtime.sendMessage with a callback (Chrome + WebKit), resolving to the reply. */
-  function sendToWorker(message) {
+  // The worker answers a ping at once; a download can take a moment to start
+  // (its own limit is 15 s), so the page waits a bit longer than that.
+  const PING_TIMEOUT_MS = 5000;
+  const DOWNLOAD_TIMEOUT_MS = 20000;
+
+  function debug(...args) {
+    try {
+      if (localStorage.getItem('xtendDebug') === '1') console.debug('[xtend]', ...args);
+    } catch (_) {
+      // no localStorage – no debug output
+    }
+  }
+
+  /**
+   * chrome.runtime.sendMessage with a callback (Chrome + WebKit), resolving to the reply.
+   * Rejects with `timeoutMessage` when no reply arrives within `timeoutMs`.
+   */
+  function sendToWorker(message, { timeoutMs = DOWNLOAD_TIMEOUT_MS, timeoutMessage, runtime } = {}) {
+    const rt = runtime || chrome.runtime;
     return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (fn, value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        fn(value);
+      };
+      const timer = setTimeout(
+        () => finish(reject, new Error(timeoutMessage || 'No answer from Xtend (timed out).')),
+        timeoutMs,
+      );
       try {
-        const result = chrome.runtime.sendMessage(message, (reply) => {
-          const error = chrome.runtime.lastError;
-          if (error) reject(new Error(error.message || String(error)));
-          else resolve(reply);
+        const result = rt.sendMessage(message, (reply) => {
+          const error = rt.lastError;
+          if (error) finish(reject, new Error(error.message || String(error)));
+          else finish(resolve, reply);
         });
-        if (result && typeof result.then === 'function') result.then(resolve, reject);
+        if (result && typeof result.then === 'function') {
+          result.then((reply) => finish(resolve, reply), (error) => finish(reject, error));
+        }
       } catch (error) {
-        reject(error);
+        finish(reject, error);
       }
     });
+  }
+
+  /** Is the service worker running and answering? */
+  async function pingWorker() {
+    const reply = await Xtend.downloadButton.send(
+      { type: 'xtend:ping' },
+      {
+        timeoutMs: PING_TIMEOUT_MS,
+        timeoutMessage: "Xtend's background script isn't answering (no reply to ping).",
+      },
+    );
+    if (!reply || !reply.ok) throw new Error("Xtend's background script isn't answering (empty reply to ping).");
   }
 
   /**
@@ -61,14 +103,26 @@
         missing ? "X hasn't sent this video yet – open the post or scroll it into view, then try again." : 'No video in this post.',
       );
     }
+    debug('downloading', items);
+    await pingWorker();
+    debug('background script answered the ping');
+
     let saved = 0;
     let lastError = null;
     for (const video of items) {
       try {
-        const reply = await Xtend.downloadButton.send({ type: 'xtend:download', video });
+        const reply = await Xtend.downloadButton.send(
+          { type: 'xtend:download', video },
+          {
+            timeoutMs: DOWNLOAD_TIMEOUT_MS,
+            timeoutMessage: "Xtend's background script didn't report back on the download (timed out).",
+          },
+        );
+        debug('download reply', reply);
         if (reply && reply.ok) saved++;
-        else lastError = new Error((reply && reply.error) || 'Download failed');
+        else lastError = new Error((reply && reply.error) || 'Download failed (empty reply).');
       } catch (error) {
+        debug('download error', error);
         lastError = error;
       }
     }
@@ -149,8 +203,9 @@
     ensure,
     scan,
     downloadPost,
-    /** Sends a message to the service worker; replaceable in tests. */
+    /** Sends a message to the service worker: (message, {timeoutMs, timeoutMessage}) → reply. Replaceable in tests. */
     send: sendToWorker,
+    sendToWorker,
     CLASS,
   };
 })();

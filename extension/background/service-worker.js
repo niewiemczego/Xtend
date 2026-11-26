@@ -1,9 +1,9 @@
 // Service worker: saves videos with chrome.downloads.
 //
-// Message from the content script:
-//   { type: 'xtend:download', video: { tweetId, mediaId, url, kind } }
-// Reply:
-//   { ok: true, downloadId, filename } | { ok: false, error }
+// Messages from the content script:
+//   { type: 'xtend:ping' }                                            → { ok: true }
+//   { type: 'xtend:download', video: { tweetId, mediaId, url, kind } } → { ok: true, downloadId, filename }
+// Any failure → { ok: false, error }. Every step has a time limit, so the page never waits forever.
 //
 // The worker builds the file name itself and only accepts https://video.twimg.com/ URLs
 // from Xtend's own content scripts on x.com, so nothing else can use it to download files.
@@ -14,6 +14,11 @@
   const VIDEO_URL = /^https:\/\/video\.twimg\.com\//;
   const DIGITS = /^\d+$/;
   const PAGE_ORIGINS = ['https://x.com', 'https://twitter.com', 'https://mobile.x.com'];
+  const DOWNLOAD_TIMEOUT_MS = 15000;
+
+  function log(...args) {
+    console.log('[xtend]', ...args);
+  }
 
   /** e.g. xtend_2125387364696756699_2125387308996468736.mp4 – no folders (not every browser allows them). */
   function buildFilename(video) {
@@ -45,10 +50,26 @@
     return null;
   }
 
-  /** chrome.downloads.download with a callback – works in Chrome and in WebKit-based browsers. */
+  /**
+   * chrome.downloads.download with a callback – works in Chrome and in WebKit-based browsers.
+   * Gives up after DOWNLOAD_TIMEOUT_MS if the browser never answers.
+   */
   function download(options) {
     return new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error('The browser did not start the download (chrome.downloads gave no answer).')),
+        DOWNLOAD_TIMEOUT_MS,
+      );
+      const done = (fn) => (value) => {
+        clearTimeout(timer);
+        fn(value);
+      };
+      resolve = done(resolve);
+      reject = done(reject);
       try {
+        if (!chrome.downloads || typeof chrome.downloads.download !== 'function') {
+          throw new Error('This browser has no chrome.downloads API.');
+        }
         const result = chrome.downloads.download(options, (downloadId) => {
           const error = chrome.runtime.lastError;
           if (error) reject(new Error(error.message || String(error)));
@@ -67,20 +88,30 @@
     if (refused) return { ok: false, error: refused };
     const video = message.video;
     const filename = buildFilename(video);
+    log('download', filename, video.url);
     try {
       const downloadId = await download({ url: video.url, filename, conflictAction: 'uniquify' });
+      log('download started', downloadId);
       return { ok: true, downloadId, filename };
     } catch (error) {
+      log('download failed', error);
       return { ok: false, error: String((error && error.message) || error) };
     }
   }
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (!message || message.type !== 'xtend:download') return false;
+    if (!message) return false;
+    if (message.type === 'xtend:ping') {
+      sendResponse({ ok: true });
+      return false;
+    }
+    if (message.type !== 'xtend:download') return false;
     handleDownload(message, sender).then(sendResponse);
     return true; // reply asynchronously
   });
 
+  log('service worker ready');
+
   // For tests
-  self.XtendBackground = { buildFilename, validate, handleDownload };
+  self.XtendBackground = { buildFilename, validate, handleDownload, DOWNLOAD_TIMEOUT_MS };
 })();
