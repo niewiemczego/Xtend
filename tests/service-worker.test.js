@@ -14,7 +14,7 @@ const fromX = { id: EXTENSION_ID, url: 'https://x.com/home', origin: 'https://x.
 
 /**
  * Loads the service worker with a fake `chrome`.
- * @param {'callback'|'promise'|'error'} mode how chrome.downloads.download behaves
+ * @param {'callback'|'promise'|'error'|'hang'|'missing'} mode how chrome.downloads.download behaves
  */
 function loadWorker(mode = 'callback') {
   const downloads = [];
@@ -28,6 +28,7 @@ function loadWorker(mode = 'callback') {
     downloads: {
       download(options, callback) {
         downloads.push(options);
+        if (mode === 'hang') return undefined; // never answers
         if (mode === 'promise') return Promise.resolve(downloads.length);
         if (mode === 'error') {
           chrome.runtime.lastError = { message: 'Download blocked' };
@@ -40,7 +41,15 @@ function loadWorker(mode = 'callback') {
       },
     },
   };
-  const ctx = { chrome, URL, console };
+  if (mode === 'missing') delete chrome.downloads;
+  // Time limits fire right away, so 'hang' doesn't make the test wait 15 s.
+  const ctx = {
+    chrome,
+    URL,
+    console: { log() {} },
+    setTimeout: (fn) => setTimeout(fn, 0),
+    clearTimeout,
+  };
   ctx.self = ctx;
   vm.createContext(ctx);
   vm.runInContext(SW, ctx, { filename: 'service-worker.js' });
@@ -105,6 +114,26 @@ describe('download message', () => {
     const { send } = loadWorker();
     const reply = await send({ type: 'xtend:download', video }, { id: EXTENSION_ID, url: 'https://twitter.com/home' });
     assert.equal(reply.ok, true);
+  });
+
+  test('answers a ping right away', async () => {
+    const { send } = loadWorker();
+    assert.deepEqual(JSON.parse(JSON.stringify(await send({ type: 'xtend:ping' }))), { ok: true });
+  });
+
+  test("gives up when the browser never answers chrome.downloads", async () => {
+    const { send, downloads } = loadWorker('hang');
+    const reply = await send({ type: 'xtend:download', video });
+    assert.equal(downloads.length, 1);
+    assert.equal(reply.ok, false);
+    assert.match(reply.error, /did not start the download/);
+  });
+
+  test('reports a browser without chrome.downloads', async () => {
+    const { send } = loadWorker('missing');
+    const reply = await send({ type: 'xtend:download', video });
+    assert.equal(reply.ok, false);
+    assert.match(reply.error, /no chrome\.downloads/);
   });
 
   test('ignores other message types', async () => {
