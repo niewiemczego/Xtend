@@ -1,3 +1,5 @@
 *.zip
+*.crx
+*.pem
 .DS_Store
 dist/

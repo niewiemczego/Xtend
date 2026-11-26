@@ -109,3 +109,17 @@ For a release, upload the `xtend-<version>.zip` attached to the GitHub release (
 GitHub Actions from the tag) in the *Package* tab, so the store copy can be checked against it
 (README → *Verify a release*). Bump `version` in `extension/manifest.json` before every new
 upload – the store rejects a version it has seen.
+
+## Verified CRX uploads
+
+Turned on under *Package* → *Verified CRX Uploads* with the public key:
+
+```sh
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out ~/xtend-signing-key.pem
+openssl rsa -in ~/xtend-signing-key.pem -pubout   # paste this into the dashboard
+```
+
+After that, upload a signed `.crx` instead of the zip:
+`scripts/sign-crx.sh <release zip> ~/xtend-signing-key.pem` → `dist/xtend-<version>.crx`.
+Keep the private key out of the repository and out of your Google account (password manager +
+offline backup).

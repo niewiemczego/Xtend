@@ -67,6 +67,7 @@ design/                    icon sources (SVG) – see design/README.md
 docs/store-listing.md      Chrome Web Store texts and privacy answers
 scripts/package.mjs        reproducible release zip + checksums
 scripts/verify-store.mjs   compares a store / installed copy with a release
+scripts/sign-crx.sh        signs a release zip as .crx for verified uploads
 .github/workflows/         CI (tests, build) and tagged releases
 tests/
   *.test.js                node --test
@@ -118,6 +119,21 @@ attestation and creates the GitHub release with the zip and both checksum files.
 goes to the Chrome Web Store. Store texts, permission justifications and the screenshot list
 are in [`docs/store-listing.md`](docs/store-listing.md); the privacy policy is
 [`PRIVACY.md`](PRIVACY.md).
+
+### Signed uploads (Chrome Web Store "Verified CRX uploads")
+
+Once verified uploads are turned on in the dashboard (*Package* → *Verified CRX Uploads*), every
+update must be a `.crx` signed with your private key. Sign the zip from the GitHub release:
+
+```sh
+scripts/sign-crx.sh ~/Downloads/xtend-0.1.1.zip ~/xtend-signing-key.pem
+# → dist/xtend-0.1.1.crx – upload it with "Upload New Package"
+```
+
+With the release's `.zip.sha256` and `.files.sha256` next to the zip, the script checks the zip
+before signing and the signed `.crx` after, so the store gets exactly the released files. It
+refuses a key stored inside the repository; `*.pem` and `*.crx` are git-ignored. Keep the key
+in a password manager with an offline backup – replacing a lost key goes through store support.
 
 Every push and pull request runs `.github/workflows/ci.yml`: unit tests, DOM tests in headless
 Chrome, the package build, a reproducibility check and the checksum check.
