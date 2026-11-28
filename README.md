@@ -26,7 +26,7 @@ Clone the repo and load the `extension/` folder the same way. There is no build 
 
 ### Download a video, GIF or photo
 
-Open the **Share** menu of a post with media and choose **Download video** or **Download photo** (or **Download photos** when a post has more than one). Files go to your Downloads folder in the best quality X offers:
+Open the **Share** menu of a post with media and choose **Download video** or **Download photo(s)**. Download photo(s) saves every photo of the post – also those a quote card on the timeline doesn't show. Files go to your Downloads folder in the best quality X offers:
 
 - videos: `xtend_<postId>_<mediaId>.mp4`
 - GIFs: `xtend_<postId>_<mediaId>_gif.mp4` – X serves GIFs as MP4 videos, so that's what you get.
@@ -34,7 +34,7 @@ Open the **Share** menu of a post with media and choose **Download video** or **
 
 Where the item appears:
 
-- **Original posts** – X's own *Download video* item now saves videos through Xtend; for photo posts Xtend adds *Download photo* / *Download photos*.
+- **Original posts** – X's own *Download video* item now saves videos through Xtend; for photo posts Xtend adds *Download photo(s)*.
 - **Quote posts** – if the quoted post has a video or photo, Xtend adds the download item.
 - **Reposts** – a repost shows the original post, so its Share menu works exactly like the original's.
 

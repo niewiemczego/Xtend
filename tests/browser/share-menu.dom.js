@@ -189,7 +189,7 @@
 
   // --- photo post ----------------------------------------------------------------------------
 
-  test('menu (photo): adds "Download photo" and downloads in original quality', async () => {
+  test('menu (photo): adds "Download photo(s)" and downloads in original quality', async () => {
     Xtend.videoStore.clear();
     const photo = {
       tweetId: '2125512480285978812',
@@ -205,8 +205,8 @@
     M.scan(menu.ownerDocument);
     M.scan(menu.ownerDocument); // idempotent
     assert.equal(ourDownloads(menu).length, 1);
-    assert.equal(labels(menu).at(-1), 'Download photo');
-    const ours = ourItem(menu, 'Download photo');
+    assert.equal(labels(menu).at(-1), 'Download photo(s)');
+    const ours = ourItem(menu, 'Download photo(s)');
     assert.deepEqual(Array.from(ours.attributes).filter((a) => a.name.startsWith('data-')).map((a) => a.name), []);
 
     ours.click();
@@ -215,6 +215,26 @@
     assert.equal(sent[0].media.kind, 'photo');
     assert.equal(sent[0].media.url, photo.url);
     assert.equal(sent[0].media.mediaId, photo.mediaId);
+  });
+
+  test('menu (photo): saves every photo when X sent more photos than it shows', async () => {
+    Xtend.videoStore.clear();
+    const photo = (key, mediaId) => ({
+      tweetId: '2125512480285978812',
+      mediaId,
+      url: `https://pbs.twimg.com/media/${key}?format=jpg&name=orig`,
+      bitrate: 0,
+      kind: 'photo',
+      allowDownload: true,
+    });
+    Xtend.videoStore.add([photo('HX9WU9tWoAAIVEL', '1'), photo('HX9WAAAAAAAAAA2', '2')]);
+    const sent = fakeWorker();
+    const { menu } = await postWithMenu('post-no-video-with-image.html', { withoutNativeItem: true });
+    M.scan(menu.ownerDocument);
+    assert.equal(labels(menu).at(-1), 'Download photo(s)', 'same label for one or many');
+    ourItem(menu, 'Download photo(s)').click();
+    for (let i = 0; i < 5 && sent.length < 2; i++) await settle();
+    assert.deepEqual(sent.map((m) => m.media.mediaId), ['1', '2']);
   });
 
   // --- when Xtend stays out of the way ---------------------------------------------------------

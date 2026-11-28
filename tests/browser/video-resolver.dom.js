@@ -172,4 +172,55 @@
     assert.equal(photos.items.length, 1);
     assert.equal(photos.items[0].url, PHOTO.origUrl);
   });
+
+  // --- photos X sent but doesn't show (quote card on the home timeline) ---------------------
+
+  /** A photo MediaItem of the photo post's tweet, with the given key. */
+  function photoOf(key, mediaId, format = 'jpg') {
+    return {
+      tweetId: PHOTO.tweetId,
+      mediaId,
+      url: `https://pbs.twimg.com/media/${key}?format=${format}&name=orig`,
+      bitrate: 0,
+      kind: 'photo',
+      allowDownload: true,
+    };
+  }
+
+  test('resolvePost: adds the photos the store has but the page shows only one of', async () => {
+    store.clear();
+    store.add([photoOf('HX9WU9tWoAAIVEL', '1'), photoOf('HX9WAAAAAAAAAA2', '2'), photoOf('HX9WAAAAAAAAAA3', '3')]);
+    const { post } = await postOf('post-no-video-with-image.html');
+    assert.equal(Xtend.post.photosOf(post).length, 1, 'the fixture shows one photo');
+    const { items, missing } = R.resolvePost(post, { pathname: '/home', kind: 'photo' });
+    assert.equal(missing, 0);
+    assert.deepEqual(items.map((i) => i.mediaId), ['1', '2', '3']);
+  });
+
+  test('resolvePost: a photo is added once, even when the store has it in another format', async () => {
+    store.clear();
+    const { post } = await postOf('post-no-video-with-image.html');
+    // the page's photo resolves to its direct name=orig URL first (store empty) …
+    assert.equal(R.resolvePost(post, { pathname: '/home', kind: 'photo' }).items.length, 1);
+    // … and the store's copy of the same photo (other format) is not added again
+    store.add([photoOf('HX9WU9tWoAAIVEL', '1', 'png')]);
+    const { items } = R.resolvePost(post, { pathname: '/home', kind: 'photo' });
+    assert.equal(items.length, 1);
+  });
+
+  test("resolvePost: photos of other posts in the store aren't added", async () => {
+    store.clear();
+    store.add([photoOf('HX9WU9tWoAAIVEL', '1'), { ...photoOf('HX9WAAAAAAAAAA2', '2'), tweetId: '1' }]);
+    const { post } = await postOf('post-no-video-with-image.html');
+    const { items } = R.resolvePost(post, { pathname: '/home', kind: 'photo' });
+    assert.deepEqual(items.map((i) => i.mediaId), ['1']);
+  });
+
+  test('resolvePost: videos are not added from the store by the photo top-up', async () => {
+    store.clear();
+    store.add([photoOf('HX9WU9tWoAAIVEL', '1'), await videoItem(PHOTO.tweetId, '9')]);
+    const { post } = await postOf('post-no-video-with-image.html');
+    const { items } = R.resolvePost(post, { pathname: '/home', kind: 'photo' });
+    assert.deepEqual(items.map((i) => i.kind), ['photo']);
+  });
 }

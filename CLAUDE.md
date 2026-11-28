@@ -18,7 +18,7 @@ Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds sm
 
 ## Behaviour to keep
 
-- Original video post: our item takes over X's native "Download video" entry. Quote video post: our item is added. Photo post (original or quote): our "Download photo" / "Download photos" item is added. Reposts need nothing extra: a repost shows the original post, so the same code handles it (confirmed by the owner, 2026-11-26).
+- Original video post: our item takes over X's native "Download video" entry. Quote video post: our item is added. Photo post (original or quote): our "Download photo(s)" item is added – one label whatever the number of photos (owner's choice, 2026-11-28) – and it saves every photo of the post, including those the store has but the page doesn't show (e.g. a quote card on the home timeline). Reposts need nothing extra: a repost shows the original post, so the same code handles it (confirmed by the owner, 2026-11-26).
 - `allow_download = false` still downloads; just log it in debug mode.
 - GIFs are saved as `.mp4`, named `xtend_<tweetId>_<mediaId>_gif.mp4`; videos `xtend_<tweetId>_<mediaId>.mp4`; photos `xtend_<tweetId>_<mediaId>.<ext>` (from `format=…`, e.g. `.jpg` / `.png`) fetched with `name=orig`.
 - Only `https://video.twimg.com/` (videos/GIFs) and `https://pbs.twimg.com/media/` (photos) URLs are ever downloaded. The service worker validates the sender, the media kind, the URL and the IDs; keep those checks.

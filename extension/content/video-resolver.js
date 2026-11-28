@@ -11,6 +11,8 @@
 //   2. photo key → store (e.g. photo from another post, or status page without URL ID)
 //   3. post ID + position in the post → store
 //   4. direct name=orig URL from the <img> src (when the post ID is known, like GIFs)
+//   Then every other photo the store has for those posts is added: a quoted post with several
+//   photos shows only some of them on the home timeline, but X's data has them all.
 
 (function () {
   'use strict';
@@ -115,6 +117,12 @@
     return { tweetId, mediaId: null, url: origUrl, bitrate: 0, kind: 'photo', allowDownload: null };
   }
 
+  /** Dedupe key: photos by their key (the same photo can come as jpg / webp / name=…), the rest by URL. */
+  function keyOf(item) {
+    const photoKey = item.kind === 'photo' ? self.XtendVideoMedia.photoKeyFromUrl(item.url) : null;
+    return photoKey ? `photo:${photoKey}` : item.url;
+  }
+
   /**
    * Media of a post (incl. a quoted post's), without duplicates.
    * `opts.kind` filters to `'video'` (videos + GIFs) or `'photo'`; omit for both.
@@ -131,15 +139,27 @@
         const item = resolve(el, opts);
         if (!item) {
           missing++;
-        } else if (!seen.has(item.url)) {
-          seen.add(item.url);
+        } else if (!seen.has(keyOf(item))) {
+          seen.add(keyOf(item));
           items.push(item);
         }
       }
     };
 
     if (!filter || filter === 'video') collect(P.videosOf(post), resolveVideo);
-    if (!filter || filter === 'photo') collect(P.photosOf(post), resolvePhoto);
+    if (!filter || filter === 'photo') {
+      const photos = P.photosOf(post);
+      collect(photos, resolvePhoto);
+      // the post's other photos X sent but doesn't show here (e.g. a quote card on the home timeline)
+      const tweetIds = new Set(photos.map((img) => P.tweetIdOf(img, opts)).filter(Boolean));
+      for (const tweetId of tweetIds) {
+        for (const item of store().byTweetId(tweetId)) {
+          if (item.kind !== 'photo' || seen.has(keyOf(item))) continue;
+          seen.add(keyOf(item));
+          items.push(item);
+        }
+      }
+    }
     return { items, missing };
   }
 
