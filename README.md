@@ -7,11 +7,11 @@
 
 No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
 
-> Status: work in progress – see the [v0.1 tracking issue](https://github.com/niewiemczego/Xtend/issues/15).
+## Install
 
-## Install (developer mode)
+**From a release:** download `xtend-<version>.zip` from the [latest release](https://github.com/niewiemczego/Xtend/releases/latest), unzip it, open `chrome://extensions` (Edge: `edge://extensions`), turn on **Developer mode** and **Load unpacked** the unzipped folder.
 
-Plain JavaScript – no dependencies, no build step.
+**From source** (plain JavaScript – no dependencies, no build step):
 
 1. Clone the repo.
 2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode**.
@@ -20,7 +20,7 @@ Plain JavaScript – no dependencies, no build step.
 
 ## Usage
 
-- **Download video** – in a post's **Share** menu. Saves `xtend_<postId>_<mediaId>.mp4` to your Downloads folder. On original posts Xtend takes over X's own item; on quote posts it adds one.
+- **Download video** – in a post's **Share** menu. Saves `xtend_<postId>_<mediaId>.mp4` (GIFs: `…_gif.mp4`) to your Downloads folder. On original posts Xtend takes over X's own item; on quote posts it adds one. Reposts show the original post, so they work the same way.
 - **Copy link** / **Share post via …** – give a clean link, `https://x.com/<user>/status/<id>`, with nothing after the path. Other links and text are left alone.
 
 Xtend shows nothing else on the page.
@@ -58,8 +58,10 @@ extension/                   loaded in Chrome and zipped for release
   background/service-worker.js  saves files with chrome.downloads
   icons/                     PNGs generated from design/
 design/                      icon sources (SVG)
+  store/                     Chrome Web Store screenshots and promo tile
 docs/store-listing.md        Chrome Web Store texts and privacy answers
 scripts/package.mjs          reproducible release zip + checksums
+scripts/lib/zip.mjs          the zip writer package.mjs uses
 scripts/verify-store.mjs     compares a store / installed copy with a release
 scripts/sign-crx.sh          signs a release zip as .crx
 scripts/push_new_release.sh  tags and pushes a release
@@ -99,14 +101,14 @@ Anyone can check that a release – and the Chrome Web Store copy – was built 
 
 ```sh
 # 1. Rebuild from the tag and compare with the SHA-256 on the release page
-git clone https://github.com/niewiemczego/Xtend && cd Xtend && git checkout v0.1.0
-node scripts/package.mjs --no-tests && cat dist/xtend-0.1.0.zip.sha256
+git clone https://github.com/niewiemczego/Xtend && cd Xtend && git checkout v0.2.0
+node scripts/package.mjs --no-tests && cat dist/xtend-0.2.0.zip.sha256
 
 # 2. Check where the zip was built
-gh attestation verify xtend-0.1.0.zip --repo niewiemczego/Xtend
+gh attestation verify xtend-0.2.0.zip --repo niewiemczego/Xtend
 
 # 3. Compare the store copy (installed folder or a .crx) file by file
-node scripts/verify-store.mjs <folder or .crx> xtend-0.1.0.files.sha256
+node scripts/verify-store.mjs <folder or .crx> xtend-0.2.0.files.sha256
 ```
 
 The store re-signs packages and adds `_metadata/`, so step 3 compares files, not the zip hash. It ignores `_metadata/` and the `update_url` / `key` manifest entries. The installed copy is in your browser profile under `Extensions/<id>/<version>/`.
