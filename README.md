@@ -11,12 +11,7 @@ No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or
 
 **From a release:** download `xtend-<version>.zip` from the [latest release](https://github.com/niewiemczego/Xtend/releases/latest), unzip it, open `chrome://extensions` (Edge: `edge://extensions`), turn on **Developer mode** and **Load unpacked** the unzipped folder.
 
-**From source** (plain JavaScript – no dependencies, no build step):
-
-1. Clone the repo.
-2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode**.
-3. **Load unpacked** → select the `extension/` folder.
-4. After changing code, click ↻ on the extension card and refresh the x.com tab.
+**From source:** clone the repo and **Load unpacked** the `extension/` folder the same way – see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Usage
 
@@ -36,65 +31,6 @@ localStorage.removeItem('xtendDebug')    // turn off
 
 Xtend's lines start with `[xtend]`: videos found, Share menu clicks, cleaned links, download requests and why they failed. Include them when you report a problem. The service worker logs to its own console (`chrome://extensions` → Xtend → *service worker*).
 
-## Project layout
-
-```
-extension/                   loaded in Chrome and zipped for release
-  manifest.json
-  shared/video-media.js      finds MP4 links in X's JSON
-  shared/post-link.js        strips tracking parameters from a post link
-  page/interceptor.js        reads X's API responses (MAIN world)
-  page/link-cleaner.js       cleans links from Copy link / Share post via …
-  content/                   isolated world, loaded in manifest order
-    selectors.js             every selector for X's markup
-    post.js                  post lookup: video, tweet IDs, media ID
-    video-store.js           MP4 links from the interceptor
-    video-resolver.js        video on screen → MP4 link
-    debug.js                 [xtend] console logs
-    download.js              post's videos → service worker
-    share-menu.js            "Download video" in the Share menu
-    main.js                  start-up and DOM observer (loaded last)
-    content.css
-  background/service-worker.js  saves files with chrome.downloads
-  icons/                     PNGs generated from design/
-design/                      icon sources (SVG)
-  store/                     Chrome Web Store screenshots and promo tile
-docs/store-listing.md        Chrome Web Store texts and privacy answers
-scripts/package.mjs          reproducible release zip + checksums
-scripts/lib/zip.mjs          the zip writer package.mjs uses
-scripts/verify-store.mjs     compares a store / installed copy with a release
-scripts/sign-crx.sh          signs a release zip as .crx
-scripts/push_new_release.sh  tags and pushes a release
-.github/workflows/           CI and releases
-CLAUDE.md                    rules for contributors and coding agents
-tests/                       *.test.js (Node), browser/ (DOM), helpers/, fixtures/
-```
-
-## Tests
-
-Nothing to install. All tests use the captures in `tests/fixtures/`.
-
-```sh
-node --test                    # logic (Node 20+)
-tests/browser/run-headless.sh  # DOM, headless Chrome
-```
-
-To run the DOM tests in a browser: `python3 -m http.server 8000` and open http://localhost:8000/tests/browser/.
-
-## Release
-
-From an up-to-date `main`:
-
-```sh
-scripts/push_new_release.sh
-```
-
-It asks for the version, checks the branch, tag and manifest, runs the tests and – after you confirm – pushes the tag `vX.Y.Z`. GitHub Actions then builds the zip, signs the `.crx`, adds [build attestations](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations) and publishes the GitHub release. The `.crx` goes to the Chrome Web Store.
-
-- **Local build:** `node scripts/package.mjs` → `dist/xtend-<version>.zip` plus `.zip.sha256` and `.files.sha256`. The build is reproducible: the same files always give a byte-identical zip.
-- **Signing key:** the repository secret `CWS_SIGNING_KEY` (PEM). To sign by hand: `scripts/sign-crx.sh <zip> <key.pem>`. Never keep the key in the repo; back it up offline – a lost key means going through store support.
-- **Store texts:** [`docs/store-listing.md`](docs/store-listing.md); privacy policy: [`PRIVACY.md`](PRIVACY.md).
-
 ## Verify a release
 
 Anyone can check that a release – and the Chrome Web Store copy – was built from this repo. Only Node is needed.
@@ -112,6 +48,14 @@ node scripts/verify-store.mjs <folder or .crx> xtend-0.2.0.files.sha256
 ```
 
 The store re-signs packages and adds `_metadata/`, so step 3 compares files, not the zip hash. It ignores `_metadata/` and the `update_url` / `key` manifest entries. The installed copy is in your browser profile under `Extensions/<id>/<version>/`.
+
+## Privacy
+
+Xtend collects nothing and sends nothing anywhere. It reads only what X already loads in your tab, keeps video addresses in memory until you close or reload it, and runs only on x.com and twitter.com. Details: [`PRIVACY.md`](PRIVACY.md).
+
+## Contributing
+
+Bug reports and pull requests are welcome – see [`CONTRIBUTING.md`](CONTRIBUTING.md). When you report a problem, include the `[xtend]` lines from debug mode.
 
 ## License
 
