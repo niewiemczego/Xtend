@@ -43,6 +43,14 @@ test('page scripts run in the MAIN world at document_start, each after its share
   ]);
 });
 
+test('content scripts: shared/post-link.js before content/embed-link.js, which is before share-menu.js', () => {
+  const content = manifest.content_scripts.find((cs) => cs.world !== 'MAIN');
+  const at = (file) => content.js.indexOf(file);
+  assert.ok(at('shared/post-link.js') >= 0, 'post-link.js loaded');
+  assert.ok(at('shared/post-link.js') < at('content/embed-link.js'), 'post-link.js first');
+  assert.ok(at('content/embed-link.js') < at('content/share-menu.js'), 'embed-link.js before share-menu.js');
+});
+
 test('content/main.js is loaded last', () => {
   const content = manifest.content_scripts.find((cs) => cs.world !== 'MAIN');
   assert.equal(content.js.at(-1), 'content/main.js');

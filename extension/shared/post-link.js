@@ -6,6 +6,10 @@
 //
 // Format (see tests/fixtures/README.md): Copy link and Share post via … give
 // `https://x.com/<user>/status/<id>?s=20`, signed in also `?a=<sharer>&s=20`.
+//
+// Also loaded in the isolated world (manifest, before content/embed-link.js) for the
+// Share menu's "Copy embed link": the same post on fixupx.com (FxEmbed), whose link
+// previews play videos inline in Discord, Telegram and other chat apps.
 
 (function (root) {
   'use strict';
@@ -42,7 +46,25 @@
     return `${url.origin}${url.pathname}`;
   }
 
-  const XtendPostLink = { cleanPostUrl };
+  const EMBED_ORIGIN = 'https://fixupx.com';
+
+  // the /<user>/status/<id> part at the start of a path – what follows (/photo/1, /analytics …) is dropped
+  const POST_PREFIX = /^\/([A-Za-z0-9_]{1,15})\/status\/(\d+)(?:[/?#]|$)/;
+
+  /**
+   * The embed link for a post path, e.g. `/user/status/123` (an X `data-href` or the
+   * status page's `location.pathname`) → `https://fixupx.com/user/status/123`.
+   * Anything that doesn't start with a post path gives null. Never throws.
+   * @param {*} path
+   * @returns {string|null}
+   */
+  function embedPostUrl(path) {
+    if (typeof path !== 'string') return null;
+    const m = POST_PREFIX.exec(path);
+    return m ? `${EMBED_ORIGIN}/${m[1]}/status/${m[2]}` : null;
+  }
+
+  const XtendPostLink = { cleanPostUrl, embedPostUrl, EMBED_ORIGIN };
 
   root.XtendPostLink = XtendPostLink;
   if (typeof module === 'object' && module.exports) module.exports = XtendPostLink;

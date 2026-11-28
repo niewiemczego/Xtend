@@ -49,6 +49,17 @@
   function labels(menu) {
     return items(menu).map((i) => i.textContent.trim());
   }
+  /** Our item with this label (our items: Copy embed link, Download video / photo(s)). */
+  function ourItem(menu, label) {
+    return items(menu).find((i) => i.classList.contains(M.ITEM_CLASS) && i.textContent.trim() === label) || null;
+  }
+  function ourDownloads(menu) {
+    return items(menu).filter((i) => i.classList.contains(M.ITEM_CLASS) && i.textContent.trim() !== M.EMBED_LABEL);
+  }
+  /** X's own items, as HTML – these must never change. */
+  function xItemsHtml(menu) {
+    return items(menu).filter((i) => !i.classList.contains(M.ITEM_CLASS)).map((i) => i.outerHTML);
+  }
   function nativeItem(menu) {
     return items(menu).find((i) => i.textContent.trim() === 'Download video' && !i.classList.contains(M.ITEM_CLASS));
   }
@@ -66,11 +77,19 @@
 
   test("menu: X's own Download video item is left exactly as it is", async () => {
     const { menu } = await postWithMenu('post-original-timeline.html');
-    const before = menu.outerHTML;
+    const before = xItemsHtml(menu);
     M.scan(menu.ownerDocument);
     M.prepare(menu);
-    assert.equal(menu.outerHTML, before);
-    assert.deepEqual(labels(menu), ['Send via Chat', 'Copy link', 'Share post via …', 'Post video', 'Download video']);
+    assert.deepEqual(xItemsHtml(menu), before);
+    assert.deepEqual(ourDownloads(menu), [], 'no download item of our own');
+    assert.deepEqual(labels(menu), [
+      'Send via Chat',
+      'Copy link',
+      'Copy embed link',
+      'Share post via …',
+      'Post video',
+      'Download video',
+    ]);
   });
 
   test("menu: clicking X's item downloads through Xtend, X's handler doesn't run", async () => {
@@ -129,8 +148,15 @@
   test('menu: no native item on a video post → our item after "Post video"', async () => {
     const { menu } = await postWithMenu('post-quote.html', { withoutNativeItem: true });
     M.scan(menu.ownerDocument);
-    assert.deepEqual(labels(menu), ['Send via Chat', 'Copy link', 'Share post via …', 'Post video', 'Download video']);
-    const ours = menu.querySelector(`.${M.ITEM_CLASS}`);
+    assert.deepEqual(labels(menu), [
+      'Send via Chat',
+      'Copy link',
+      'Copy embed link',
+      'Share post via …',
+      'Post video',
+      'Download video',
+    ]);
+    const ours = ourItem(menu, 'Download video');
     assert.ok(ours, 'our item');
     assert.equal(ours.getAttribute('role'), 'menuitem');
     assert.equal(ours.id, '');
@@ -144,7 +170,8 @@
     M.scan(menu.ownerDocument);
     M.scan(menu.ownerDocument);
     M.prepare(menu);
-    assert.equal(menu.querySelectorAll(`.${M.ITEM_CLASS}`).length, 1);
+    assert.equal(ourDownloads(menu).length, 1);
+    assert.equal(items(menu).filter((i) => i.textContent.trim() === M.EMBED_LABEL).length, 1, 'one embed item');
   });
 
   test("menu (quote): our item downloads the quoted post's video", async () => {
@@ -154,7 +181,7 @@
     const sent = fakeWorker();
     const { menu } = await postWithMenu('post-quote.html', { withoutNativeItem: true });
     M.scan(menu.ownerDocument);
-    menu.querySelector(`.${M.ITEM_CLASS}`).click();
+    ourItem(menu, 'Download video').click();
     await settle();
     assert.equal(sent.length, 1);
     assert.equal(sent[0].media.tweetId, QUOTED.tweetId);
@@ -177,9 +204,9 @@
     const { menu } = await postWithMenu('post-no-video-with-image.html', { withoutNativeItem: true });
     M.scan(menu.ownerDocument);
     M.scan(menu.ownerDocument); // idempotent
-    assert.equal(menu.querySelectorAll(`.${M.ITEM_CLASS}`).length, 1);
+    assert.equal(ourDownloads(menu).length, 1);
     assert.equal(labels(menu).at(-1), 'Download photo');
-    const ours = menu.querySelector(`.${M.ITEM_CLASS}`);
+    const ours = ourItem(menu, 'Download photo');
     assert.deepEqual(Array.from(ours.attributes).filter((a) => a.name.startsWith('data-')).map((a) => a.name), []);
 
     ours.click();
@@ -192,12 +219,14 @@
 
   // --- when Xtend stays out of the way ---------------------------------------------------------
 
-  test('menu: post without video → nothing added, X keeps its own behaviour', async () => {
+  test('menu: post without media → only "Copy embed link" added, X keeps its own behaviour', async () => {
     const sent = fakeWorker();
     const { menu } = await postWithMenu('post-no-video.html');
-    const before = menu.outerHTML;
+    const before = xItemsHtml(menu);
     M.scan(menu.ownerDocument);
-    assert.equal(menu.outerHTML, before);
+    assert.deepEqual(xItemsHtml(menu), before);
+    assert.deepEqual(ourDownloads(menu), [], 'no download item');
+    assert.ok(ourItem(menu, M.EMBED_LABEL), 'embed item');
     const xCalls = xHandlers(nativeItem(menu), ['click']);
     nativeItem(menu).click();
     await settle();

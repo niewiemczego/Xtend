@@ -2,7 +2,7 @@
 const { describe, test } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { cleanPostUrl } = require('../extension/shared/post-link.js');
+const { cleanPostUrl, embedPostUrl } = require('../extension/shared/post-link.js');
 const { calls } = require('./fixtures/share/post-links.json');
 
 describe('cleanPostUrl – captured links', () => {
@@ -69,4 +69,42 @@ describe('cleanPostUrl – everything else is untouched', () => {
       assert.equal(cleanPostUrl(value), value);
     }
   });
+});
+
+describe('embedPostUrl – post paths', () => {
+  const cases = [
+    ['/user/status/123', 'https://fixupx.com/user/status/123'],
+    ['/User_1/status/123/', 'https://fixupx.com/User_1/status/123'],
+    ['/user/status/123/photo/1', 'https://fixupx.com/user/status/123'],
+    ['/user/status/123/video/1', 'https://fixupx.com/user/status/123'],
+    ['/user/status/123/analytics', 'https://fixupx.com/user/status/123'],
+    ['/user/status/123?s=20', 'https://fixupx.com/user/status/123'],
+    ['/user/status/123#m', 'https://fixupx.com/user/status/123'],
+    ['/i/status/123', 'https://fixupx.com/i/status/123'],
+  ];
+  for (const [input, expected] of cases) {
+    test(input, () => assert.equal(embedPostUrl(input), expected));
+  }
+});
+
+describe('embedPostUrl – everything else gives null', () => {
+  const cases = [
+    undefined,
+    null,
+    42,
+    {},
+    '',
+    '/home',
+    '/user',
+    '/user/status/',
+    '/user/status/abc',
+    '/user/status/123abc',
+    '/a_name_that_is_too_long/status/123',
+    'user/status/123',
+    'https://x.com/user/status/123',
+    '//evil.example/user/status/123',
+  ];
+  for (const input of cases) {
+    test(JSON.stringify(input) ?? String(input), () => assert.equal(embedPostUrl(input), null));
+  }
 });
