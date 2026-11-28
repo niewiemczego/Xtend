@@ -2,116 +2,117 @@
 
 **Xtend: Social Media Toolkit** – a lightweight browser extension that adds the small features social media sites are missing. On X today:
 
-- save any video or GIF in the best available quality from the Share menu (quoted posts too),
-- share post links without tracking parameters.
+- **Save any video or GIF** in the best available quality, right from the post's Share menu – quoted posts included.
+- **Share clean post links** – no `?s=20`, `?a=…` or other tracking parameters.
 
-No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
+More platforms and tools to come. No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
 
 ## Install
 
-**From a release:** download `xtend-<version>.zip` from the [latest release](https://github.com/niewiemczego/Xtend/releases/latest), unzip it, open `chrome://extensions` (Edge: `edge://extensions`), turn on **Developer mode** and **Load unpacked** the unzipped folder.
+### From a release
 
-**From source** (plain JavaScript – no dependencies, no build step):
-
-1. Clone the repo.
+1. Download `xtend-<version>.zip` from the [latest release](https://github.com/niewiemczego/Xtend/releases/latest) and unzip it.
 2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode**.
-3. **Load unpacked** → select the `extension/` folder.
-4. After changing code, click ↻ on the extension card and refresh the x.com tab.
+3. Click **Load unpacked** and select the unzipped folder.
+
+Want to be sure the zip is really built from this code? See [Verify a release](#verify-a-release).
+
+### From source
+
+Clone the repo and load the `extension/` folder the same way. There is no build step – see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Usage
 
-- **Download video** – in a post's **Share** menu. Saves `xtend_<postId>_<mediaId>.mp4` (GIFs: `…_gif.mp4`) to your Downloads folder. On original posts Xtend takes over X's own item; on quote posts it adds one. Reposts show the original post, so they work the same way.
-- **Copy link** / **Share post via …** – give a clean link, `https://x.com/<user>/status/<id>`, with nothing after the path. Other links and text are left alone.
+### Download a video or GIF
 
-Xtend shows nothing else on the page.
+Open the **Share** menu of a post with a video or GIF and choose **Download video**. The file goes to your Downloads folder in the best quality X offers:
+
+- videos: `xtend_<postId>_<mediaId>.mp4`
+- GIFs: `xtend_<postId>_<mediaId>_gif.mp4` – X serves GIFs as MP4 videos, so that's what you get.
+
+Where the item appears:
+
+- **Original posts** – X's own *Download video* item now saves the file through Xtend.
+- **Quote posts** – if the quoted post has a video, Xtend adds the *Download video* item.
+- **Reposts** – a repost shows the original post, so its Share menu works exactly like the original's.
+
+### Clean post links
+
+**Copy link** and **Share post via …** in the Share menu give you a clean link:
+
+```
+https://x.com/<user>/status/<id>?s=20   →   https://x.com/<user>/status/<id>
+```
+
+Only text that is nothing but a post link is changed. Other links and text are passed on as they are. Xtend never reads your clipboard. It only cleans the link X is about to put there.
+
+Xtend adds nothing else to the page: no buttons, popups or settings.
 
 ## Troubleshooting: debug mode
 
-In the developer console on x.com (Chrome / Edge / Brave: `⌥⌘J` / `Ctrl+Shift+J`; Safari / Search: Web Inspector → *Console*):
+If a download doesn't start or a link isn't cleaned, debug mode shows what Xtend is doing.
+
+1. Open x.com and the browser's developer console:
+   - Chrome / Edge / Brave: `⌥⌘J` on macOS, `Ctrl+Shift+J` on Windows/Linux
+   - Safari and other WebKit browsers: Web Inspector → *Console*
+2. Run:
+   ```js
+   localStorage.xtendDebug = '1'
+   ```
+3. Refresh the page and try again.
+
+Every Xtend line in the console starts with `[xtend]`, for example:
+
+- videos found while you scroll – `+3 video(s), 12 stored`
+- each cleaned link – `cleaned link: <before> → <after>`
+- the download request and its result, or why it failed – e.g. *X hasn't sent this video yet…* or *the browser did not start the download*
+
+The extension's background part logs in its own console (`chrome://extensions` → Xtend → *service worker*), but only for downloads started while debug mode is on.
+
+When you [report a problem](https://github.com/niewiemczego/Xtend/issues), please include these lines.
+
+To turn debug mode off:
 
 ```js
-localStorage.xtendDebug = '1'            // turn on, then refresh the page
-localStorage.removeItem('xtendDebug')    // turn off
+localStorage.removeItem('xtendDebug')
 ```
 
-Xtend's lines start with `[xtend]`: videos found, Share menu clicks, cleaned links, download requests and why they failed. Include them when you report a problem. The service worker logs to its own console (`chrome://extensions` → Xtend → *service worker*).
+## Privacy
 
-## Project layout
+Xtend collects nothing and sends nothing anywhere. It has no servers.
 
-```
-extension/                   loaded in Chrome and zipped for release
-  manifest.json
-  shared/video-media.js      finds MP4 links in X's JSON
-  shared/post-link.js        strips tracking parameters from a post link
-  page/interceptor.js        reads X's API responses (MAIN world)
-  page/link-cleaner.js       cleans links from Copy link / Share post via …
-  content/                   isolated world, loaded in manifest order
-    selectors.js             every selector for X's markup
-    post.js                  post lookup: video, tweet IDs, media ID
-    video-store.js           MP4 links from the interceptor
-    video-resolver.js        video on screen → MP4 link
-    debug.js                 [xtend] console logs
-    download.js              post's videos → service worker
-    share-menu.js            "Download video" in the Share menu
-    main.js                  start-up and DOM observer (loaded last)
-    content.css
-  background/service-worker.js  saves files with chrome.downloads
-  icons/                     PNGs generated from design/
-design/                      icon sources (SVG)
-  store/                     Chrome Web Store screenshots and promo tile
-docs/store-listing.md        Chrome Web Store texts and privacy answers
-scripts/package.mjs          reproducible release zip + checksums
-scripts/lib/zip.mjs          the zip writer package.mjs uses
-scripts/verify-store.mjs     compares a store / installed copy with a release
-scripts/sign-crx.sh          signs a release zip as .crx
-scripts/push_new_release.sh  tags and pushes a release
-.github/workflows/           CI and releases
-CLAUDE.md                    rules for contributors and coding agents
-tests/                       *.test.js (Node), browser/ (DOM), helpers/, fixtures/
-```
+- It reads only what X already loads in your tab, to find each video's file address.
+- It keeps those addresses in memory only, until you close or reload the tab.
+- It runs only on x.com and twitter.com. Its one browser permission is `downloads`, to save the file you chose.
 
-## Tests
-
-Nothing to install. All tests use the captures in `tests/fixtures/`.
-
-```sh
-node --test                    # logic (Node 20+)
-tests/browser/run-headless.sh  # DOM, headless Chrome
-```
-
-To run the DOM tests in a browser: `python3 -m http.server 8000` and open http://localhost:8000/tests/browser/.
-
-## Release
-
-From an up-to-date `main`:
-
-```sh
-scripts/push_new_release.sh
-```
-
-It asks for the version, checks the branch, tag and manifest, runs the tests and – after you confirm – pushes the tag `vX.Y.Z`. GitHub Actions then builds the zip, signs the `.crx`, adds [build attestations](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations) and publishes the GitHub release. The `.crx` goes to the Chrome Web Store.
-
-- **Local build:** `node scripts/package.mjs` → `dist/xtend-<version>.zip` plus `.zip.sha256` and `.files.sha256`. The build is reproducible: the same files always give a byte-identical zip.
-- **Signing key:** the repository secret `CWS_SIGNING_KEY` (PEM). To sign by hand: `scripts/sign-crx.sh <zip> <key.pem>`. Never keep the key in the repo; back it up offline – a lost key means going through store support.
-- **Store texts:** [`docs/store-listing.md`](docs/store-listing.md); privacy policy: [`PRIVACY.md`](PRIVACY.md).
+The full policy is in [`PRIVACY.md`](PRIVACY.md).
 
 ## Verify a release
 
-Anyone can check that a release – and the Chrome Web Store copy – was built from this repo. Only Node is needed.
+Anyone can check that a release – and the copy in the Chrome Web Store – is built from this repository. Only Node is needed (and the GitHub CLI for step 2).
 
-```sh
-# 1. Rebuild from the tag and compare with the SHA-256 on the release page
-git clone https://github.com/niewiemczego/Xtend && cd Xtend && git checkout v0.2.0
-node scripts/package.mjs --no-tests && cat dist/xtend-0.2.0.zip.sha256
+1. **Rebuild it from the tag** and compare the SHA-256 with the one on the release page. The build is reproducible, so the same code always gives a byte-identical zip.
+   ```sh
+   git clone https://github.com/niewiemczego/Xtend && cd Xtend
+   git checkout v0.2.0
+   node scripts/package.mjs --no-tests
+   cat dist/xtend-0.2.0.zip.sha256
+   ```
+2. **Check where the release zip was built.** Every release has a GitHub build attestation that proves it came from this repo's release workflow:
+   ```sh
+   gh attestation verify xtend-0.2.0.zip --repo niewiemczego/Xtend
+   ```
+3. **Compare the Chrome Web Store copy.** The store re-signs every package and adds a `_metadata/` folder, so its file never has the zip's SHA-256 – but every file inside must be identical. Point the checker at the installed extension folder or at a downloaded `.crx`:
+   ```sh
+   node scripts/verify-store.mjs <installed folder or .crx> xtend-0.2.0.files.sha256
+   ```
+   To find the installed folder: `chrome://extensions` → turn on Developer mode → note Xtend's ID. The folder is `Extensions/<id>/<version>/` in your browser profile.
 
-# 2. Check where the zip was built
-gh attestation verify xtend-0.2.0.zip --repo niewiemczego/Xtend
+   `OK – all N files match the release` means the store serves exactly the released code. The checker ignores `_metadata/` and the `update_url` / `key` entries the store or browser may add to `manifest.json`, and says when that happened. Run it from a checkout of the same tag.
 
-# 3. Compare the store copy (installed folder or a .crx) file by file
-node scripts/verify-store.mjs <folder or .crx> xtend-0.2.0.files.sha256
-```
+## Contributing
 
-The store re-signs packages and adds `_metadata/`, so step 3 compares files, not the zip hash. It ignores `_metadata/` and the `update_url` / `key` manifest entries. The installed copy is in your browser profile under `Extensions/<id>/<version>/`.
+Bug reports and pull requests are welcome. Setup, project layout, tests and the release process are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## License
 

@@ -53,7 +53,8 @@ Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds sm
 
 Docs are part of the change, not a follow-up: update them in the same PR, and say in the PR description which ones you touched (or why none needed it). Check each of these:
 
-- `README.md` – Usage, Troubleshooting (debug mode), Project layout (every added, moved or removed file), Tests, Release and Verify sections, and any command that changed.
+- `README.md` – the public, user-facing page: Install, Usage, Troubleshooting (debug mode), Privacy and Verify sections, and any user-facing command that changed.
+- `CONTRIBUTING.md` – Getting started, Project layout (every added, moved or removed file), Tests and Release sections, and any developer command that changed.
 - `PRIVACY.md` – anything about what the extension reads, stores, sends or downloads.
 - `docs/store-listing.md` – the store description, permission justifications and data-usage answers. If these change, the Chrome Web Store dashboard has to be updated by hand too: say so in the PR.
 - `extension/manifest.json` `description` – must still match what the extension does (max 132 characters).
