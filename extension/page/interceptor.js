@@ -1,5 +1,5 @@
 // Runs in the page's MAIN world at document_start, after shared/video-media.js.
-// Reads the GraphQL responses X already loads (fetch + XHR), finds media links with
+// Reads the GraphQL responses X already loads (fetch, XHR and SSR hydration), finds media links with
 // XtendVideoMedia and forwards them to the content script:
 //
 //   window.postMessage({ source: 'xtend', type: 'media', items: MediaItem[] }, location.origin)
@@ -95,5 +95,95 @@
       }
       return originalSend.apply(this, arguments);
     };
+  }
+
+  // --- SSR hydration (TanStack Start $_TSR) ---------------------------------
+  // On direct post loads / refreshes, X embeds initial GraphQL responses in
+  // $_TSR.router.dehydratedData.messagesBeforeDehydration and streams further
+  // ones (e.g. TweetDetail) through a seroval stream in $R.tsr, then deletes
+  // $_TSR once hydration finishes.
+  const watchedStreams = new WeakSet();
+
+  function publishRelayMessage(msg) {
+    try {
+      const value = msg && msg.result && msg.result.value;
+      if (typeof value === 'string' && value.includes('media_entities2')) {
+        publish(JSON.parse(value));
+      }
+    } catch (_) {
+      // not GraphQL JSON – ignore
+    }
+  }
+
+  function watchSerovalStreams() {
+    try {
+      const tsr = self.$R && self.$R.tsr;
+      if (!Array.isArray(tsr)) return;
+      for (const entry of tsr) {
+        if (
+          entry &&
+          entry.__SEROVAL_STREAM__ === true &&
+          typeof entry.on === 'function' &&
+          !watchedStreams.has(entry)
+        ) {
+          watchedStreams.add(entry);
+          entry.on({ next: publishRelayMessage, throw() {}, return() {} });
+        }
+      }
+    } catch (_) {
+      // never affect X's hydration
+    }
+  }
+
+  function inspectRouter(router) {
+    try {
+      const dehydrated = router && router.dehydratedData;
+      const messages = dehydrated && dehydrated.messagesBeforeDehydration;
+      if (Array.isArray(messages)) {
+        for (const msg of messages) publishRelayMessage(msg);
+      }
+    } catch (_) {
+      // ignore
+    }
+    watchSerovalStreams();
+  }
+
+  function watchTsrObject(tsr) {
+    if (!tsr || typeof tsr !== 'object') return;
+    if (tsr.router) inspectRouter(tsr.router);
+    try {
+      let currentRouter = tsr.router;
+      Object.defineProperty(tsr, 'router', {
+        configurable: true,
+        enumerable: true,
+        get() {
+          return currentRouter;
+        },
+        set(value) {
+          currentRouter = value;
+          inspectRouter(value);
+        },
+      });
+    } catch (_) {
+      // non-configurable or frozen – ignore
+    }
+  }
+
+  try {
+    let currentTsr = window.$_TSR;
+    if (currentTsr) watchTsrObject(currentTsr);
+    Object.defineProperty(window, '$_TSR', {
+      configurable: true,
+      enumerable: false,
+      get() {
+        return currentTsr;
+      },
+      set(value) {
+        currentTsr = value;
+        watchTsrObject(value);
+      },
+    });
+  } catch (_) {
+    // never affect X
   }
 })();

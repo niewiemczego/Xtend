@@ -27,7 +27,7 @@ extension/                 the folder you load in Chrome and zip for release
     video-media.js         finds video, GIF and photo links in X's JSON (page world + content + tests)
     post-link.js           strips tracking parameters from a post link (page world + tests)
   page/                    MAIN world
-    interceptor.js         reads X's API responses (fetch + XHR)
+    interceptor.js         reads X's API responses (fetch, XHR and SSR hydration)
     link-cleaner.js        cleans the link Copy link / Share post via … hand out
   content/                 loaded in the order listed in the manifest, sharing `self.Xtend`
     selectors.js           every selector for X's markup
