@@ -4,7 +4,7 @@ Rules for working on Xtend. Read this before changing anything.
 
 ## What this is
 
-Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds small missing features to social media sites. Today, on X: the Share menu's "Download video" and "Download photo(s)" items save the post's video, GIF or original-quality photos, and the menu's "Copy link" / "Share post via …" give post links without tracking parameters. Other platforms (e.g. Instagram reels) may come later; build for what exists now, not for them.
+Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds small missing features to social media sites. Today, on X: the Share menu's "Download video" and "Download photo(s)" items save the post's video, GIF or original-quality photos, the menu's "Copy link" / "Share post via …" give post links without tracking parameters, and our "Copy embed link" item copies the post's `https://fixupx.com/<user>/status/<id>` link for chat-app previews. Other platforms (e.g. Instagram reels) may come later; build for what exists now, not for them.
 
 ## Hard rules
 
@@ -22,6 +22,7 @@ Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds sm
 - `allow_download = false` still downloads; just log it in debug mode.
 - GIFs are saved as `.mp4`, named `xtend_<tweetId>_<mediaId>_gif.mp4`; videos `xtend_<tweetId>_<mediaId>.mp4`; photos `xtend_<tweetId>_<mediaId>.<ext>` (from `format=…`, e.g. `.jpg` / `.png`) fetched with `name=orig`.
 - Only `https://video.twimg.com/` (videos/GIFs) and `https://pbs.twimg.com/media/` (photos) URLs are ever downloaded. The service worker validates the sender, the media kind, the URL and the IDs; keep those checks.
+- Copy embed link: added to every post's Share menu right after X's "Copy link", cloned from it (keeps X's link icon). The link is built only from the post's `data-href` / the status page URL – nothing is fetched, the clipboard is only written. The domain is `fixupx.com` (owner's choice, 2026-11-28); it lives in `shared/post-link.js` (`EMBED_ORIGIN`).
 - Link cleaning: only a string that is nothing but a post link (`x.com` / `twitter.com`, `/<user>/status/<id>`, optionally `/photo/N` or `/video/N`) loses its query string and hash; anything else passes through untouched. X's call always goes through with the same `this` and promise, and APIs the browser doesn't have are never added.
 - Must work in Chromium and WebKit-based browsers. The main test browser is [Search](https://github.com/driceroland/Search); also check Chrome.
 

@@ -25,7 +25,8 @@ extension/                 the folder you load in Chrome and zip for release
   manifest.json
   shared/                  pure code used by more than one context
     video-media.js         finds video, GIF and photo links in X's JSON (page world + content + tests)
-    post-link.js           strips tracking parameters from a post link (page world + tests)
+    post-link.js           strips tracking parameters from a post link; builds the fixupx.com embed link
+                           (page world + content + tests)
   page/                    MAIN world
     interceptor.js         reads X's API responses (fetch, XHR and SSR hydration)
     link-cleaner.js        cleans the link Copy link / Share post via … hand out
@@ -36,7 +37,8 @@ extension/                 the folder you load in Chrome and zip for release
     video-resolver.js      video or photo on screen → download URL
     debug.js               [xtend] console logs, only in debug mode
     download.js            resolve a post's media → service worker
-    share-menu.js          "Download video" and "Download photo(s)" in the Share menu
+    embed-link.js          the post's fixupx.com link → clipboard
+    share-menu.js          "Download video", "Download photo(s)" and "Copy embed link" in the Share menu
     main.js                start-up and DOM observer (loaded last)
     content.css
   background/

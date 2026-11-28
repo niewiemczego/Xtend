@@ -14,7 +14,7 @@ Xtend: Social Media Toolkit
 **Summary** (from the manifest, max 132 characters)
 
 ```
-Small tools that social media sites are missing. On X: save videos, GIFs and original-quality photos, share clean post links.
+Small tools that social media sites are missing. On X: save videos, GIFs and original-quality photos, copy clean or embed links.
 ```
 
 **Description**
@@ -32,6 +32,9 @@ Open the Share menu of any post with a video, GIF or photo and choose "Download 
 
 CLEAN POST LINKS
 "Copy link" and "Share post via …" give the plain post address – x.com/<user>/status/<id> – without the tracking parameters X adds (?s=20, ?a=…). Everything else you copy is left alone.
+
+EMBED LINKS FOR CHAT APPS
+"Copy embed link" copies the post on fixupx.com, so its video plays inline in Discord, Telegram and other chat apps. fixupx.com is an independent service (FxEmbed); Xtend never contacts it.
 
 PRIVATE BY DESIGN
 • No accounts, no tracking, no analytics, no ads
@@ -76,7 +79,7 @@ DMs or notifications):
 **Single purpose**
 
 ```
-Xtend adds small missing tools to social media sites. Currently, on X (x.com), it adds "Download video" and "Download photo(s)" options to the Share menu that save the post's video, GIF or original-quality photos to the user's computer, and removes tracking parameters from the post links that menu copies or shares.
+Xtend adds small missing tools to social media sites. Currently, on X (x.com), it adds "Download video" and "Download photo(s)" options to the Share menu that save the post's video, GIF or original-quality photos to the user's computer, removes tracking parameters from the post links that menu copies or shares, and adds "Copy embed link", which copies the post's fixupx.com link for chat-app previews.
 ```
 
 **Permission justification – `downloads`**
@@ -88,18 +91,19 @@ Used to save the video, GIF or photo(s) the user chose from the Share menu to th
 **Host permission justification** (content scripts on `x.com`, `twitter.com`, `mobile.x.com`)
 
 ```
-Xtend runs only on X. On these pages it adds "Download video" and "Download photo(s)" to the post's Share menu and reads the media addresses from the post data X already loads in the page, so it can save the selected media. When X copies or shares a post link from that menu, Xtend removes the tracking parameters from it. It does not run on any other site.
+Xtend runs only on X. On these pages it adds "Download video", "Download photo(s)" and "Copy embed link" to the post's Share menu and reads the media addresses from the post data X already loads in the page, so it can save the selected media. When X copies or shares a post link from that menu, Xtend removes the tracking parameters from it. It does not run on any other site.
 ```
 
 **Remote code**: No, I am not using remote code. (All code ships in the package; there are no `eval`, remote scripts or Wasm downloads.)
 
 **Data usage** – check **Website content** only. Xtend reads the post data X loads on the page
 (media links, post IDs) to find the video or photo to save, and the post link X copies or shares, to
-remove its tracking parameters. It stays in the page's memory and is never
+remove its tracking parameters or build its fixupx.com embed link. It stays in the page's memory and is never
 sent anywhere, but the store asks for data handled locally too. Leave every other type
 unchecked: no personal, health, financial or authentication data, no messages, no location,
 no browsing history (only the current post's address is read), no tracking of clicks or keys.
-Xtend never reads the clipboard; it only cleans the post link X itself is about to write.
+Xtend never reads the clipboard; it only cleans the post link X itself is about to write, and
+writes the embed link when the user picks "Copy embed link".
 
 Certify:
 

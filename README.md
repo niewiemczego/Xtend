@@ -4,6 +4,7 @@
 
 - **Save any video, GIF or photo** in original quality, right from the post's Share menu – quoted posts included.
 - **Share clean post links** – no `?s=20`, `?a=…` or other tracking parameters.
+- **Copy an embed link** – the post on `fixupx.com`, so its video plays right inside Discord, Telegram and other chat apps.
 
 More platforms and tools to come. No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
 
@@ -47,6 +48,16 @@ https://x.com/<user>/status/<id>?s=20   →   https://x.com/<user>/status/<id>
 
 Only text that is nothing but a post link is changed. Other links and text are passed on as they are. Xtend never reads your clipboard. It only cleans the link X is about to put there.
 
+### Copy embed link
+
+**Copy embed link**, right below *Copy link* in every post's Share menu, copies the same post on [fixupx.com](https://github.com/FxEmbed/FxEmbed):
+
+```
+https://fixupx.com/<user>/status/<id>
+```
+
+Paste it in Discord, Telegram and other chat apps and the post's video plays inline, instead of only opening on X. On quote posts it's the link of the post you opened the menu on. The link is built from the post's address – Xtend fetches nothing – and only written to your clipboard, never read. fixupx.com is run by the FxEmbed project, not by Xtend: whoever opens the link (and the chat app making its preview) talks to their servers. X doesn't show a "Copied" message for it.
+
 Xtend adds nothing else to the page: no buttons, popups or settings.
 
 ## Troubleshooting: debug mode
@@ -66,6 +77,7 @@ Every Xtend line in the console starts with `[xtend]`, for example:
 
 - media found while you scroll – `+3 media item(s), 12 stored`
 - each cleaned link – `cleaned link: <before> → <after>`
+- each copied embed link – `copied embed link: https://fixupx.com/…`, or why copying failed
 - the download request and its result, or why it failed – e.g. *X hasn't sent this video yet…* or *the browser did not start the download*
 
 The extension's background part logs in its own console (`chrome://extensions` → Xtend → *service worker*), but only for downloads started while debug mode is on.
@@ -85,6 +97,7 @@ Xtend collects nothing and sends nothing anywhere. It has no servers.
 - It reads only what X already loads in your tab, to find each video or photo's file address.
 - It keeps those addresses in memory only, until you close or reload the tab.
 - It runs only on x.com and twitter.com. Its one browser permission is `downloads`, to save the file you chose.
+- *Copy embed link* gives you a link to fixupx.com, a third-party service. Xtend never contacts it; the people who open the link do.
 
 The full policy is in [`PRIVACY.md`](PRIVACY.md).
 

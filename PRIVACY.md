@@ -1,10 +1,11 @@
 # Xtend – Privacy Policy
 
-_Last updated: 2026-11-28_
+_Last updated: 2026-11-28 (Copy embed link)_
 
 Xtend is a browser extension that adds small tools to social media sites. Today it lets you
 save videos, GIFs and original-quality photos from X (x.com) through the post's Share menu,
-and removes tracking parameters from the post links that menu copies or shares.
+removes tracking parameters from the post links that menu copies or shares, and can copy a
+post's embed link on fixupx.com.
 
 ## The short version
 
@@ -22,6 +23,9 @@ browser, on the page you are looking at.
   hands it to your system's share sheet (*Share post via …*), Xtend sees that text on its way
   out and, if it is a post link, removes the part after the path (e.g. `?s=20`). Anything
   else is passed on unchanged. Xtend never reads your clipboard and keeps nothing of it.
+- **The post's address, for Copy embed link.** When you choose *Copy embed link*, Xtend reads
+  the address of the post you opened the menu on (`/<user>/status/<id>`) and **writes**
+  `https://fixupx.com/<user>/status/<id>` to your clipboard. It doesn't read the clipboard.
 
 ## What Xtend stores
 
@@ -37,6 +41,11 @@ for: your browser's download manager saves the file from X's media servers
 (`video.twimg.com` for videos and GIFs, `pbs.twimg.com` for photos), just as if you had saved
 it yourself.
 
+*Copy embed link* only puts a link to fixupx.com on your clipboard; Xtend doesn't contact that
+site. fixupx.com is run by the independent FxEmbed project. When you or the people you send the
+link to open it – or a chat app builds its preview – those requests go to FxEmbed's servers
+and are covered by their policies, not this one.
+
 ## What Xtend never does
 
 - No accounts, sign-in, analytics, tracking, ads or third-party services
@@ -48,7 +57,7 @@ it yourself.
 | Permission | Why |
 | --- | --- |
 | `downloads` | To save the video, GIF or photo you chose to your Downloads folder. |
-| Access to `x.com`, `twitter.com`, `mobile.x.com` | To add *Download video* / *Download photo(s)* to the Share menu, read the media addresses and clean the post links X copies or shares on those sites. Xtend runs on no other site. |
+| Access to `x.com`, `twitter.com`, `mobile.x.com` | To add *Download video* / *Download photo(s)* / *Copy embed link* to the Share menu, read the media addresses and clean the post links X copies or shares on those sites. Xtend runs on no other site. |
 
 ## Changes
 
