@@ -217,6 +217,26 @@
     assert.equal(sent[0].media.mediaId, photo.mediaId);
   });
 
+  test('menu (photo): says "Download photos" and saves all when X sent more photos than it shows', async () => {
+    Xtend.videoStore.clear();
+    const photo = (key, mediaId) => ({
+      tweetId: '2125512480285978812',
+      mediaId,
+      url: `https://pbs.twimg.com/media/${key}?format=jpg&name=orig`,
+      bitrate: 0,
+      kind: 'photo',
+      allowDownload: true,
+    });
+    Xtend.videoStore.add([photo('HX9WU9tWoAAIVEL', '1'), photo('HX9WAAAAAAAAAA2', '2')]);
+    const sent = fakeWorker();
+    const { menu } = await postWithMenu('post-no-video-with-image.html', { withoutNativeItem: true });
+    M.scan(menu.ownerDocument);
+    assert.equal(labels(menu).at(-1), 'Download photos');
+    ourItem(menu, 'Download photos').click();
+    for (let i = 0; i < 5 && sent.length < 2; i++) await settle();
+    assert.deepEqual(sent.map((m) => m.media.mediaId), ['1', '2']);
+  });
+
   // --- when Xtend stays out of the way ---------------------------------------------------------
 
   test('menu: post without media → only "Copy embed link" added, X keeps its own behaviour', async () => {

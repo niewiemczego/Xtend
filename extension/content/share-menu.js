@@ -95,7 +95,7 @@
       tail = videoItem;
     }
     if (wantPhoto && !items.some((i) => kindOf(i) === 'photo')) {
-      const label = P.photosOf(post).length > 1 ? PHOTO_LABEL_PLURAL : PHOTO_LABEL;
+      const label = Xtend.videoResolver.photoCount(post) > 1 ? PHOTO_LABEL_PLURAL : PHOTO_LABEL;
       tail.after(createItem(template, label, 'photo'));
     }
   }
