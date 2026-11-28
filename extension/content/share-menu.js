@@ -6,8 +6,8 @@
 //   in the capture phase on the document, before X's handlers, and runs Xtend's download.
 // - No native item for a video post (e.g. a quote post whose quoted post has a video):
 //   our own *Download video* item is added, cloned from the last item.
-// - Photo post (original, repost or quote): our own *Download photo* (or *Download photos* for
-//   multiple) item is added, cloned from the last item.
+// - Photo post (original, repost or quote): our own *Download photo(s)* item is added, cloned
+//   from the last item. It saves every photo of the post (and of the quoted post).
 // - Every post: our own *Copy embed link* item is added right after X's *Copy link*, cloned
 //   from it (so it keeps X's link icon). It copies the post's fixupx.com link (content/embed-link.js).
 //
@@ -22,8 +22,7 @@
   const S = Xtend.selectors;
 
   const NATIVE_LABEL = 'Download video'; // as in tests/fixtures/html/share-menu-original.html
-  const PHOTO_LABEL = 'Download photo';
-  const PHOTO_LABEL_PLURAL = 'Download photos';
+  const PHOTO_LABEL = 'Download photo(s)'; // one label for one or many photos (owner's choice, 2026-11-28)
   const COPY_LINK_LABEL = 'Copy link'; // X's own item, as in tests/fixtures/html/share-menu-original.html
   const EMBED_LABEL = 'Copy embed link';
   const ITEM_CLASS = 'xtend-menu-item';
@@ -95,8 +94,7 @@
       tail = videoItem;
     }
     if (wantPhoto && !items.some((i) => kindOf(i) === 'photo')) {
-      const label = Xtend.videoResolver.photoCount(post) > 1 ? PHOTO_LABEL_PLURAL : PHOTO_LABEL;
-      tail.after(createItem(template, label, 'photo'));
+      tail.after(createItem(template, PHOTO_LABEL, 'photo'));
     }
   }
 
@@ -170,7 +168,6 @@
     ITEM_CLASS,
     NATIVE_LABEL,
     PHOTO_LABEL,
-    PHOTO_LABEL_PLURAL,
     EMBED_LABEL,
   };
 })();

@@ -163,11 +163,5 @@
     return { items, missing };
   }
 
-  /** How many photos a download of `post` would save: shown ones, plus the rest X sent. */
-  function photoCount(post, opts) {
-    const resolved = resolvePost(post, Object.assign({}, opts, { kind: 'photo' })).items.length;
-    return Math.max(P.photosOf(post).length, resolved);
-  }
-
-  Xtend.videoResolver = { resolveVideo, resolvePhoto, resolvePost, photoCount };
+  Xtend.videoResolver = { resolveVideo, resolvePhoto, resolvePost };
 })();

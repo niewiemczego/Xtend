@@ -195,7 +195,6 @@
     const { items, missing } = R.resolvePost(post, { pathname: '/home', kind: 'photo' });
     assert.equal(missing, 0);
     assert.deepEqual(items.map((i) => i.mediaId), ['1', '2', '3']);
-    assert.equal(R.photoCount(post, { pathname: '/home' }), 3);
   });
 
   test('resolvePost: a photo is added once, even when the store has it in another format', async () => {
@@ -207,7 +206,6 @@
     store.add([photoOf('HX9WU9tWoAAIVEL', '1', 'png')]);
     const { items } = R.resolvePost(post, { pathname: '/home', kind: 'photo' });
     assert.equal(items.length, 1);
-    assert.equal(R.photoCount(post, { pathname: '/home' }), 1);
   });
 
   test("resolvePost: photos of other posts in the store aren't added", async () => {
