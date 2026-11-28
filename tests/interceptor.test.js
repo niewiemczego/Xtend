@@ -143,3 +143,89 @@ describe('interceptor – XMLHttpRequest', () => {
     assert.equal(win.posted.length, 0);
   });
 });
+
+describe('interceptor – SSR hydration ($_TSR)', () => {
+  /** Minimal seroval stream matching X's streamed HTML hydration helper. */
+  function createSerovalStream() {
+    const buffer = [];
+    const listeners = [];
+    return {
+      __SEROVAL_STREAM__: true,
+      on(listener) {
+        listeners.push(listener);
+        for (const value of buffer) listener.next(value);
+        return () => {
+          const i = listeners.indexOf(listener);
+          if (i !== -1) listeners.splice(i, 1);
+        };
+      },
+      next(value) {
+        buffer.push(value);
+        for (const listener of listeners) listener.next(value);
+      },
+    };
+  }
+
+  test('publishes media from messagesBeforeDehydration and streamed $R.tsr chunks', () => {
+    const win = withInterceptor(async () => fakeResponse({}));
+    const stream = createSerovalStream();
+    const xReceived = [];
+    stream.on({ next: (v) => xReceived.push(v), throw() {}, return() {} });
+
+    win.$R = { tsr: [stream] };
+    win.$_TSR = {
+      c() {
+        delete win.$_TSR;
+        delete win.$R.tsr;
+      },
+    };
+    win.$_TSR.router = {
+      dehydratedData: {
+        messagesBeforeDehydration: [
+          { kind: 1, result: { kind: 'Result.Ok', value: JSON.stringify({ data: { can_access_payments: false } }) } },
+          { kind: 1, result: { kind: 'Result.Ok', value: JSON.stringify(api('TweetResultByRestId')) } },
+        ],
+      },
+    };
+
+    assert.equal(win.posted.length, 1);
+    assert.deepEqual(
+      plain(win.posted[0].data.items).map((i) => i.tweetId),
+      ['2125654411900760238'],
+    );
+
+    // Streamed TweetDetail chunk arrives later
+    const detailMsg = { kind: 1, result: { kind: 'Result.Ok', value: JSON.stringify(api('TweetDetail')) } };
+    stream.next(detailMsg);
+
+    assert.equal(win.posted.length, 2);
+    const streamedItems = plain(win.posted[1].data.items);
+    assert.deepEqual(
+      streamedItems.filter((i) => i.kind !== 'photo').map((i) => i.tweetId),
+      ['2125654411900760238', '2125393023093592423', '2125448866132820027'],
+    );
+    assert.equal(streamedItems.filter((i) => i.kind === 'photo').length, 5);
+    // X's own stream listener still receives everything untouched
+    assert.deepEqual(xReceived, [detailMsg]);
+
+    // X's cleanup (delete self.$_TSR) succeeds cleanly
+    win.$_TSR.c();
+    assert.equal('$_TSR' in win, false);
+  });
+
+  test('ignores malformed hydration payloads without affecting X', () => {
+    const win = withInterceptor(async () => fakeResponse({}));
+    const stream = createSerovalStream();
+    win.$R = { tsr: [stream] };
+    win.$_TSR = {};
+    const router = {
+      dehydratedData: {
+        messagesBeforeDehydration: [null, { result: { value: '{media_entities2 broken json' } }],
+      },
+    };
+    win.$_TSR.router = router;
+    stream.next({ result: { value: 'not json media_entities2' } });
+    assert.equal(win.$_TSR.router, router);
+    assert.equal(win.posted.length, 0);
+  });
+});
