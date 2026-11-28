@@ -1,10 +1,16 @@
-// Maps a video on screen to an MP4 link from the video store.
+// Maps a video or photo on screen to a downloadable link from the store.
 //
-// Order, cheapest and most exact first:
-//   1. GIF: the <video> already plays a direct video.twimg.com MP4
+// Videos (cheapest and most exact first):
+//   1. GIF: the <video> already plays a direct video.twimg.com MP4 (prefer store copy if present)
 //   2. media ID from the poster URL → store
 //   3. post ID (nearest data-href, or the status page URL) → store, by position in the post
-// Nothing found → null: X hasn't sent this post's data (yet). No network fallback.
+//   Nothing found → null: X hasn't sent this post's data (yet). No network fallback.
+//
+// Photos:
+//   1. post ID + photo key (e.g. HX9WU9tWoAAIVEL) → store (keeps mediaId & GraphQL original format)
+//   2. photo key → store (e.g. photo from another post, or status page without URL ID)
+//   3. post ID + position in the post → store
+//   4. direct name=orig URL from the <img> src (when the post ID is known, like GIFs)
 
 (function () {
   'use strict';
@@ -21,10 +27,15 @@
     return P.videosOf(post).filter((v) => P.tweetIdOf(v, opts) === tweetId);
   }
 
+  /** Photos in `post` that belong to `tweetId`, in page order. */
+  function photosOfTweet(post, tweetId, opts) {
+    return P.photosOf(post).filter((img) => P.tweetIdOf(img, opts) === tweetId);
+  }
+
   /**
    * @param {HTMLVideoElement} video
    * @param {{pathname?: string}} [opts]  page path (defaults to location.pathname)
-   * @returns {object|null} VideoItem
+   * @returns {object|null} MediaItem
    */
   function resolveVideo(video, opts) {
     if (!video) return null;
@@ -43,12 +54,14 @@
     const mediaId = P.mediaIdOf(video);
     if (mediaId) {
       const item = store().byMediaId(mediaId);
-      if (item) return item;
+      if (item && item.kind !== 'photo') return item;
     }
 
     // 3. post ID + position of the video within that post
     if (!tweetId) return null;
-    const list = store().byTweetId(tweetId);
+    const list = store()
+      .byTweetId(tweetId)
+      .filter((i) => i.kind !== 'photo');
     if (!list.length) return null;
     const post = video.closest(Xtend.selectors.article);
     const siblings = post ? videosOfTweet(post, tweetId, opts) : [video];
@@ -57,24 +70,78 @@
   }
 
   /**
-   * All videos of a post (incl. a quoted post's), without duplicates.
-   * @returns {{items: object[], missing: number}} `missing` = videos without a known MP4
+   * @param {HTMLImageElement} img
+   * @param {{pathname?: string}} [opts]  page path (defaults to location.pathname)
+   * @returns {object|null} MediaItem
+   */
+  function resolvePhoto(img, opts) {
+    if (!img) return null;
+    const origUrl = P.photoOrigUrlOf(img);
+    if (!origUrl) return null;
+    const key = P.photoKeyOf(img);
+    const tweetId = P.tweetIdOf(img, opts);
+
+    // 1. exact tweet + photo key in store (preserves mediaId & original format even if DOM uses webp)
+    if (tweetId && key) {
+      const known = store()
+        .byTweetId(tweetId)
+        .find((i) => i.kind === 'photo' && self.XtendVideoMedia.photoKeyFromUrl(i.url) === key);
+      if (known) return known;
+    }
+
+    // 2. photo key alone in store
+    if (key) {
+      const known = store().byPhotoKey(key);
+      if (known) return known;
+    }
+
+    // 3. post ID + position of the photo within that post
+    if (tweetId) {
+      const list = store()
+        .byTweetId(tweetId)
+        .filter((i) => i.kind === 'photo');
+      if (list.length) {
+        const post = img.closest(Xtend.selectors.article);
+        const siblings = post ? photosOfTweet(post, tweetId, opts) : [img];
+        if (siblings.length === list.length) {
+          const byPos = list[siblings.indexOf(img)];
+          if (byPos) return byPos;
+        }
+      }
+    }
+
+    // 4. direct name=orig from the <img> src (like GIFs, works even if the store doesn't have it)
+    if (!tweetId) return null;
+    return { tweetId, mediaId: null, url: origUrl, bitrate: 0, kind: 'photo', allowDownload: null };
+  }
+
+  /**
+   * Media of a post (incl. a quoted post's), without duplicates.
+   * `opts.kind` filters to `'video'` (videos + GIFs) or `'photo'`; omit for both.
+   * @returns {{items: object[], missing: number}} `missing` = elements without a known URL
    */
   function resolvePost(post, opts) {
+    const filter = opts && opts.kind;
     const items = [];
     const seen = new Set();
     let missing = 0;
-    for (const video of P.videosOf(post)) {
-      const item = resolveVideo(video, opts);
-      if (!item) {
-        missing++;
-      } else if (!seen.has(item.url)) {
-        seen.add(item.url);
-        items.push(item);
+
+    const collect = (elements, resolve) => {
+      for (const el of elements) {
+        const item = resolve(el, opts);
+        if (!item) {
+          missing++;
+        } else if (!seen.has(item.url)) {
+          seen.add(item.url);
+          items.push(item);
+        }
       }
-    }
+    };
+
+    if (!filter || filter === 'video') collect(P.videosOf(post), resolveVideo);
+    if (!filter || filter === 'photo') collect(P.photosOf(post), resolvePhoto);
     return { items, missing };
   }
 
-  Xtend.videoResolver = { resolveVideo, resolvePost };
+  Xtend.videoResolver = { resolveVideo, resolvePhoto, resolvePost };
 })();

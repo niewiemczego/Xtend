@@ -1,5 +1,5 @@
 // Working with a single post in the DOM: find the post for an action bar or Share menu,
-// list its videos, and read the IDs needed to look a video up in the video store.
+// list its videos and photos, and read the IDs needed to look media up in the store.
 //
 // Structure (tests/fixtures/html, 2026-11-26):
 //   timeline     div[role=link][data-href=/<user>/status/<id>] > article > … video, action bar
@@ -51,6 +51,15 @@
     return videosOf(post).length > 0;
   }
 
+  /** Photos in a post, in page order – including the quoted post's. */
+  function photosOf(post) {
+    return post ? Array.from(post.querySelectorAll(S.photo)) : [];
+  }
+
+  function hasPhoto(post) {
+    return photosOf(post).length > 0;
+  }
+
   /** Media ID from the poster (amplify_video_thumb / ext_tw_video_thumb); null for GIFs. */
   function mediaIdOf(video) {
     return self.XtendVideoMedia.mediaIdFromUrl(video && video.getAttribute('poster'));
@@ -60,6 +69,16 @@
   function directMp4Of(video) {
     const src = video && video.getAttribute('src');
     return src && DIRECT_MP4.test(src) ? src : null;
+  }
+
+  /** Original-quality (name=orig) URL derived from a photo <img>'s src, or null. */
+  function photoOrigUrlOf(img) {
+    return self.XtendVideoMedia.photoOrigUrl(img && img.getAttribute('src'));
+  }
+
+  /** Photo key (e.g. HX9WU9tWoAAIVEL) from a photo <img>'s src, or null. */
+  function photoKeyOf(img) {
+    return self.XtendVideoMedia.photoKeyFromUrl(img && img.getAttribute('src'));
   }
 
   /** The Share button of an action bar. */
@@ -81,8 +100,12 @@
     tweetIdOf,
     videosOf,
     hasVideo,
+    photosOf,
+    hasPhoto,
     mediaIdOf,
     directMp4Of,
+    photoOrigUrlOf,
+    photoKeyOf,
     shareButtonOf,
     postForMenu,
     statusIdFrom,

@@ -65,11 +65,14 @@ function loadWorker(mode = 'callback') {
   return { worker: ctx.XtendBackground, downloads, send, listeners, logs };
 }
 
-// A real VideoItem from the captured TweetResultByRestId response
+// Real MediaItems from the captured GraphQL responses
 const video = JSON.parse(JSON.stringify(extractFromGraphQL(api('TweetResultByRestId'))[0]));
 const gif = JSON.parse(
   JSON.stringify(extractFromGraphQL(api('HomeTimeline')).find((i) => i.kind === 'gif')),
 );
+const detailItems = extractFromGraphQL(api('TweetDetail'));
+const jpgPhoto = JSON.parse(JSON.stringify(detailItems.find((i) => i.kind === 'photo' && i.url.includes('format=jpg'))));
+const pngPhoto = JSON.parse(JSON.stringify(detailItems.find((i) => i.kind === 'photo' && i.url.includes('format=png'))));
 
 describe('buildFilename', () => {
   const { worker } = loadWorker();
@@ -82,15 +85,25 @@ describe('buildFilename', () => {
     assert.equal(worker.buildFilename(gif), `xtend_${gif.tweetId}_${gif.mediaId}_gif.mp4`);
   });
 
+  test('photos use the image format from the URL', () => {
+    assert.equal(worker.buildFilename(jpgPhoto), `xtend_${jpgPhoto.tweetId}_${jpgPhoto.mediaId}.jpg`);
+    assert.equal(worker.buildFilename(pngPhoto), 'xtend_2124066362058273249_2124066322879315969.png');
+    assert.equal(
+      worker.buildFilename({ ...jpgPhoto, url: 'https://pbs.twimg.com/media/HX8nO9yW8AE_59M?name=orig' }),
+      `xtend_${jpgPhoto.tweetId}_${jpgPhoto.mediaId}.jpg`,
+    );
+  });
+
   test('works without a media ID', () => {
     assert.equal(worker.buildFilename({ ...video, mediaId: null }), 'xtend_2125654411900760238.mp4');
+    assert.equal(worker.buildFilename({ ...pngPhoto, mediaId: null }), 'xtend_2124066362058273249.png');
   });
 });
 
 describe('download message', () => {
   test('downloads the MP4 under the built file name', async () => {
     const { send, downloads } = loadWorker();
-    const reply = await send({ type: 'xtend:download', video });
+    const reply = await send({ type: 'xtend:download', media: video });
     assert.equal(reply.ok, true);
     assert.equal(reply.filename, 'xtend_2125654411900760238_2125654023743102976.mp4');
     assert.equal(downloads.length, 1);
@@ -98,32 +111,42 @@ describe('download message', () => {
     assert.equal(downloads[0].conflictAction, 'uniquify');
   });
 
+  test('downloads an original-quality photo from pbs.twimg.com', async () => {
+    const { send, downloads } = loadWorker();
+    const reply = await send({ type: 'xtend:download', media: pngPhoto });
+    assert.equal(reply.ok, true);
+    assert.equal(reply.filename, 'xtend_2124066362058273249_2124066322879315969.png');
+    assert.equal(downloads.length, 1);
+    assert.equal(downloads[0].url, pngPhoto.url);
+    assert.equal(downloads[0].conflictAction, 'uniquify');
+  });
+
   test('works when chrome.downloads.download returns a promise', async () => {
     const { send, downloads } = loadWorker('promise');
-    const reply = await send({ type: 'xtend:download', video });
+    const reply = await send({ type: 'xtend:download', media: video });
     assert.equal(reply.ok, true);
     assert.equal(downloads.length, 1);
   });
 
   test('reports a failed download', async () => {
     const { send } = loadWorker('error');
-    const reply = await send({ type: 'xtend:download', video });
+    const reply = await send({ type: 'xtend:download', media: video });
     assert.deepEqual(JSON.parse(JSON.stringify(reply)), { ok: false, error: 'Download blocked' });
   });
 
   test('accepts content scripts on twitter.com too (sender without origin)', async () => {
     const { send } = loadWorker();
-    const reply = await send({ type: 'xtend:download', video }, { id: EXTENSION_ID, url: 'https://twitter.com/home' });
+    const reply = await send({ type: 'xtend:download', media: video }, { id: EXTENSION_ID, url: 'https://twitter.com/home' });
     assert.equal(reply.ok, true);
   });
 
   test('logs nothing unless the message asks for debug output', async () => {
     const quiet = loadWorker();
-    await quiet.send({ type: 'xtend:download', video });
+    await quiet.send({ type: 'xtend:download', media: video });
     assert.deepEqual(quiet.logs, []);
 
     const verbose = loadWorker();
-    await verbose.send({ type: 'xtend:download', video, debug: true });
+    await verbose.send({ type: 'xtend:download', media: video, debug: true });
     assert.ok(verbose.logs.length >= 2, verbose.logs.join('\n'));
     assert.ok(verbose.logs.every((line) => line.startsWith('[xtend]')));
   });
@@ -135,7 +158,7 @@ describe('download message', () => {
 
   test("gives up when the browser never answers chrome.downloads", async () => {
     const { send, downloads } = loadWorker('hang');
-    const reply = await send({ type: 'xtend:download', video });
+    const reply = await send({ type: 'xtend:download', media: video });
     assert.equal(downloads.length, 1);
     assert.equal(reply.ok, false);
     assert.match(reply.error, /did not start the download/);
@@ -143,7 +166,7 @@ describe('download message', () => {
 
   test('reports a browser without chrome.downloads', async () => {
     const { send } = loadWorker('missing');
-    const reply = await send({ type: 'xtend:download', video });
+    const reply = await send({ type: 'xtend:download', media: video });
     assert.equal(reply.ok, false);
     assert.match(reply.error, /no chrome\.downloads/);
   });
@@ -160,16 +183,22 @@ describe('refused requests – nothing is downloaded', () => {
   const cases = [
     ['another extension', { ...fromX, id: 'other' }, video, 'not from Xtend'],
     ['another site', { id: EXTENSION_ID, url: 'https://evil.example/', origin: 'https://evil.example' }, video, 'not from x.com'],
-    ['a non-twimg URL', fromX, { ...video, url: 'https://evil.example/a.mp4' }, 'not a video.twimg.com URL'],
-    ['plain http', fromX, { ...video, url: 'http://video.twimg.com/a.mp4' }, 'not a video.twimg.com URL'],
+    ['a non-twimg video URL', fromX, { ...video, url: 'https://evil.example/a.mp4' }, 'not a video.twimg.com URL'],
+    ['plain http video', fromX, { ...video, url: 'http://video.twimg.com/a.mp4' }, 'not a video.twimg.com URL'],
+    ['pbs URL passed as video', fromX, { ...video, url: jpgPhoto.url }, 'not a video.twimg.com URL'],
+    ['a non-twimg photo URL', fromX, { ...jpgPhoto, url: 'https://evil.example/media/a.jpg' }, 'not a pbs.twimg.com URL'],
+    ['plain http photo', fromX, { ...jpgPhoto, url: 'http://pbs.twimg.com/media/a.jpg' }, 'not a pbs.twimg.com URL'],
+    ['pbs non-media path (avatar)', fromX, { ...jpgPhoto, url: 'https://pbs.twimg.com/profile_images/1/a.jpg' }, 'not a pbs.twimg.com URL'],
+    ['pbs path traversal', fromX, { ...jpgPhoto, url: 'https://pbs.twimg.com/media/../profile_images/1.jpg' }, 'not a pbs.twimg.com URL'],
+    ['bad media kind', fromX, { ...video, kind: 'audio' }, 'bad media kind'],
     ['a bad post ID', fromX, { ...video, tweetId: '../../etc' }, 'bad post ID'],
     ['a bad media ID', fromX, { ...video, mediaId: 'x/y' }, 'bad media ID'],
-    ['no video', fromX, undefined, 'no video'],
+    ['no media', fromX, undefined, 'no media'],
   ];
-  for (const [name, sender, v, error] of cases) {
+  for (const [name, sender, m, error] of cases) {
     test(name, async () => {
       const { send, downloads } = loadWorker();
-      const reply = await send({ type: 'xtend:download', video: v }, sender);
+      const reply = await send({ type: 'xtend:download', media: m }, sender);
       assert.equal(reply.ok, false);
       assert.equal(reply.error, error);
       assert.equal(downloads.length, 0);

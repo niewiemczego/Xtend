@@ -49,9 +49,32 @@
     assert.deepEqual(result, { ok: true, saved: 1, authorDisabled: false });
     assert.equal(sent.length, 1);
     assert.equal(sent[0].type, 'xtend:download');
-    assert.equal(sent[0].video.url, item.url);
-    assert.equal(sent[0].video.tweetId, TIMELINE.tweetId);
+    assert.equal(sent[0].media.url, item.url);
+    assert.equal(sent[0].media.tweetId, TIMELINE.tweetId);
     assert.equal(doc.body.children.length, 1, 'nothing added to the page');
+  });
+
+  test('start: sends a photo in original quality to the service worker', async () => {
+    Xtend.videoStore.clear();
+    const photo = {
+      tweetId: '2125512480285978812',
+      mediaId: '2125512475000000000',
+      url: 'https://pbs.twimg.com/media/HX9WU9tWoAAIVEL?format=jpg&name=orig',
+      bitrate: 0,
+      kind: 'photo',
+      allowDownload: true,
+    };
+    Xtend.videoStore.add([photo]);
+    const sent = fakeWorker({ ok: true, filename: 'x.jpg', downloadId: 1 });
+    const { post } = await postOf('post-no-video-with-image.html');
+
+    const result = await D.start(post, { kind: 'photo' });
+
+    assert.deepEqual(result, { ok: true, saved: 1, authorDisabled: false });
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].media.kind, 'photo');
+    assert.equal(sent[0].media.mediaId, photo.mediaId);
+    assert.equal(sent[0].media.url, photo.url);
   });
 
   test('start: still downloads when the author turned downloads off', async () => {
@@ -69,8 +92,8 @@
     const { post } = await postOf('post-original-timeline-gif.html');
     await D.start(post);
     assert.equal(sent.length, 1);
-    assert.equal(sent[0].video.kind, 'gif');
-    assert.equal(sent[0].video.url, 'https://video.twimg.com/tweet_video/HX7auBYXIAA1xX0.mp4');
+    assert.equal(sent[0].media.kind, 'gif');
+    assert.equal(sent[0].media.url, 'https://video.twimg.com/tweet_video/HX7auBYXIAA1xX0.mp4');
   });
 
   test('start: video not loaded yet → error that says what to do', async () => {

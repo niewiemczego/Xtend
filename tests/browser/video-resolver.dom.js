@@ -116,10 +116,60 @@
     assert.equal(result.items[0].url, quoted.url);
   });
 
-  test('resolvePost: a post without video resolves to nothing', async () => {
+  test('resolvePost: a post without video or photo resolves to nothing', async () => {
     store.clear();
     const doc = await fixtures('post-no-video.html');
     const post = Xtend.post.findPost(Xtend.post.findActionBars(doc)[0]);
     assert.deepEqual(R.resolvePost(post, { pathname: '/home' }), { items: [], missing: 0 });
+  });
+
+  // --- photos ------------------------------------------------------------------------
+
+  const PHOTO = {
+    tweetId: '2125512480285978812',
+    mediaId: '2125512475000000000',
+    key: 'HX9WU9tWoAAIVEL',
+    origUrl: 'https://pbs.twimg.com/media/HX9WU9tWoAAIVEL?format=jpg&name=orig',
+  };
+
+  test('resolver: photo prefers the store copy (mediaId, original format, allowDownload)', async () => {
+    store.clear();
+    const pngOrig = `https://pbs.twimg.com/media/${PHOTO.key}?format=png&name=orig`;
+    store.add([
+      {
+        tweetId: PHOTO.tweetId,
+        mediaId: PHOTO.mediaId,
+        url: pngOrig,
+        bitrate: 0,
+        kind: 'photo',
+        allowDownload: false,
+      },
+    ]);
+    const { post } = await postOf('post-no-video-with-image.html');
+    const img = Xtend.post.photosOf(post)[0];
+    const found = R.resolvePhoto(img, { pathname: '/home' });
+    assert.equal(found.mediaId, PHOTO.mediaId);
+    assert.equal(found.url, pngOrig); // GraphQL original PNG beats DOM format=jpg
+    assert.equal(found.allowDownload, false);
+  });
+
+  test('resolver: photo falls back to direct name=orig when the store is empty', async () => {
+    store.clear();
+    const { post } = await postOf('post-no-video-with-image.html');
+    const found = R.resolvePhoto(Xtend.post.photosOf(post)[0], { pathname: '/home' });
+    assert.deepEqual(
+      { tweetId: found.tweetId, mediaId: found.mediaId, url: found.url, kind: found.kind },
+      { tweetId: PHOTO.tweetId, mediaId: null, url: PHOTO.origUrl, kind: 'photo' },
+    );
+  });
+
+  test('resolvePost: filters by kind (video vs photo)', async () => {
+    store.clear();
+    const { post } = await postOf('post-no-video-with-image.html');
+    assert.equal(R.resolvePost(post, { pathname: '/home', kind: 'video' }).items.length, 0);
+    const photos = R.resolvePost(post, { pathname: '/home', kind: 'photo' });
+    assert.equal(photos.missing, 0);
+    assert.equal(photos.items.length, 1);
+    assert.equal(photos.items[0].url, PHOTO.origUrl);
   });
 }

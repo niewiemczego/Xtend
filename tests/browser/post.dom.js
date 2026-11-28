@@ -113,6 +113,24 @@
     assert.equal(P.directMp4Of(P.videosOf(video)[0]), null);
   });
 
+  // --- photos ------------------------------------------------------------------------
+
+  test('hasPhoto / photosOf: finds post photos and ignores avatars', async () => {
+    const { post } = await onlyPost('post-no-video-with-image.html');
+    assert.equal(P.hasPhoto(post), true);
+    const photos = P.photosOf(post);
+    assert.equal(photos.length, 1);
+    assert.equal(P.tweetIdOf(photos[0]), '2125512480285978812');
+    assert.equal(P.photoKeyOf(photos[0]), 'HX9WU9tWoAAIVEL');
+    assert.equal(P.photoOrigUrlOf(photos[0]), 'https://pbs.twimg.com/media/HX9WU9tWoAAIVEL?format=jpg&name=orig');
+
+    for (const name of [...Object.keys(VIDEO_POSTS), 'post-no-video.html']) {
+      const other = (await onlyPost(name)).post;
+      assert.equal(P.hasPhoto(other), false, name);
+    }
+    assert.equal(P.hasPhoto(null), false);
+  });
+
   // --- Share button and menu ---------------------------------------------------------
 
   test('every action bar has a Share button', async () => {

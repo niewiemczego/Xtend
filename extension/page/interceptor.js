@@ -1,8 +1,8 @@
 // Runs in the page's MAIN world at document_start, after shared/video-media.js.
-// Reads the GraphQL responses X already loads (fetch + XHR), finds MP4 links with
+// Reads the GraphQL responses X already loads (fetch + XHR), finds media links with
 // XtendVideoMedia and forwards them to the content script:
 //
-//   window.postMessage({ source: 'xtend', type: 'videos', items: VideoItem[] }, location.origin)
+//   window.postMessage({ source: 'xtend', type: 'media', items: MediaItem[] }, location.origin)
 //
 // Rules: never change what X receives (same promise, same response, same errors),
 // every hook is wrapped in try/catch, and the script installs itself only once.
@@ -28,7 +28,7 @@
       return;
     }
     if (items.length) {
-      window.postMessage({ source: 'xtend', type: 'videos', items }, location.origin);
+      window.postMessage({ source: 'xtend', type: 'media', items }, location.origin);
     }
   }
 

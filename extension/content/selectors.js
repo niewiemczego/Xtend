@@ -22,6 +22,7 @@
     engagementButton: 'button.x-engagement-button',
 
     video: 'video',
+    photo: 'img[src^="https://pbs.twimg.com/media/"]',
     statusLink: 'a[href*="/status/"]',
 
     /** Share menu is rendered at the end of <body>; aria-labelledby points at the Share button. */

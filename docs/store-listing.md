@@ -14,19 +14,19 @@ Xtend: Social Media Toolkit
 **Summary** (from the manifest, max 132 characters)
 
 ```
-Small tools that social media sites are missing. Today, on X: save videos and GIFs in the best quality, share clean post links.
+Small tools that social media sites are missing. On X: save videos, GIFs and original-quality photos, share clean post links.
 ```
 
 **Description**
 
 ```
-Xtend adds the small tools that social media sites are missing – starting with saving videos and clean links.
+Xtend adds the small tools that social media sites are missing – starting with saving media in original quality and clean links.
 
-SAVE VIDEOS AND GIFS FROM X
-Open the Share menu of any post with a video or GIF and choose "Download video". Xtend saves it to your Downloads folder in the best quality available – the same file X plays, no re-encoding.
+SAVE VIDEOS, GIFS AND PHOTOS FROM X
+Open the Share menu of any post with a video, GIF or photo and choose "Download video" or "Download photo(s)". Xtend saves it to your Downloads folder in the best quality available – the same video file X plays (no re-encoding) or the full-resolution original image (name=orig).
 
-• Works on original posts and on quote posts (it saves the video of the quoted post)
-• Always picks the highest-quality version
+• Works on original posts, reposts and quote posts (it saves the media of the quoted post)
+• Always picks the highest-quality video or original-resolution photo (including multi-photo posts)
 • GIFs are saved as MP4, exactly as X stores them
 • Nothing added to the page: Xtend lives in the Share menu you already know
 
@@ -76,25 +76,25 @@ DMs or notifications):
 **Single purpose**
 
 ```
-Xtend adds small missing tools to social media sites. Currently, on X (x.com), it adds a "Download video" option to the Share menu that saves the post's video or GIF to the user's computer, and removes tracking parameters from the post links that menu copies or shares.
+Xtend adds small missing tools to social media sites. Currently, on X (x.com), it adds "Download video" and "Download photo(s)" options to the Share menu that save the post's video, GIF or original-quality photos to the user's computer, and removes tracking parameters from the post links that menu copies or shares.
 ```
 
 **Permission justification – `downloads`**
 
 ```
-Used to save the video or GIF the user chose from the Share menu to the user's Downloads folder. Downloads start only when the user clicks "Download video".
+Used to save the video, GIF or photo(s) the user chose from the Share menu to the user's Downloads folder. Downloads start only when the user clicks "Download video" or "Download photo(s)".
 ```
 
 **Host permission justification** (content scripts on `x.com`, `twitter.com`, `mobile.x.com`)
 
 ```
-Xtend runs only on X. On these pages it adds "Download video" to the post's Share menu and reads the video addresses from the post data X already loads in the page, so it can save the selected video. When X copies or shares a post link from that menu, Xtend removes the tracking parameters from it. It does not run on any other site.
+Xtend runs only on X. On these pages it adds "Download video" and "Download photo(s)" to the post's Share menu and reads the media addresses from the post data X already loads in the page, so it can save the selected media. When X copies or shares a post link from that menu, Xtend removes the tracking parameters from it. It does not run on any other site.
 ```
 
 **Remote code**: No, I am not using remote code. (All code ships in the package; there are no `eval`, remote scripts or Wasm downloads.)
 
 **Data usage** – check **Website content** only. Xtend reads the post data X loads on the page
-(video links, post IDs) to find the video to save, and the post link X copies or shares, to
+(media links, post IDs) to find the video or photo to save, and the post link X copies or shares, to
 remove its tracking parameters. It stays in the page's memory and is never
 sent anywhere, but the store asks for data handled locally too. Leave every other type
 unchecked: no personal, health, financial or authentication data, no messages, no location,

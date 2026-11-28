@@ -93,7 +93,7 @@
     assert.deepEqual(xCalls, [], "X's handlers");
     assert.deepEqual(closed, ['Escape'], 'menu asked to close');
     assert.equal(sent.length, 1);
-    assert.equal(sent[0].video.url, item.url);
+    assert.equal(sent[0].media.url, item.url);
     assert.equal(doc.querySelectorAll('.xtend-download').length, 0, 'no action-bar button');
   });
 
@@ -157,7 +157,37 @@
     menu.querySelector(`.${M.ITEM_CLASS}`).click();
     await settle();
     assert.equal(sent.length, 1);
-    assert.equal(sent[0].video.tweetId, QUOTED.tweetId);
+    assert.equal(sent[0].media.tweetId, QUOTED.tweetId);
+  });
+
+  // --- photo post ----------------------------------------------------------------------------
+
+  test('menu (photo): adds "Download photo" and downloads in original quality', async () => {
+    Xtend.videoStore.clear();
+    const photo = {
+      tweetId: '2125512480285978812',
+      mediaId: '2125512475000000000',
+      url: 'https://pbs.twimg.com/media/HX9WU9tWoAAIVEL?format=jpg&name=orig',
+      bitrate: 0,
+      kind: 'photo',
+      allowDownload: true,
+    };
+    Xtend.videoStore.add([photo]);
+    const sent = fakeWorker();
+    const { menu } = await postWithMenu('post-no-video-with-image.html', { withoutNativeItem: true });
+    M.scan(menu.ownerDocument);
+    M.scan(menu.ownerDocument); // idempotent
+    assert.equal(menu.querySelectorAll(`.${M.ITEM_CLASS}`).length, 1);
+    assert.equal(labels(menu).at(-1), 'Download photo');
+    const ours = menu.querySelector(`.${M.ITEM_CLASS}`);
+    assert.deepEqual(Array.from(ours.attributes).filter((a) => a.name.startsWith('data-')).map((a) => a.name), []);
+
+    ours.click();
+    await settle();
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].media.kind, 'photo');
+    assert.equal(sent[0].media.url, photo.url);
+    assert.equal(sent[0].media.mediaId, photo.mediaId);
   });
 
   // --- when Xtend stays out of the way ---------------------------------------------------------

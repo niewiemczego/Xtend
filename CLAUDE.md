@@ -4,24 +4,24 @@ Rules for working on Xtend. Read this before changing anything.
 
 ## What this is
 
-Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds small missing features to social media sites. Today, on X: the Share menu's "Download video" item saves the post's video or GIF in the best quality, and the menu's "Copy link" / "Share post via …" give post links without tracking parameters. Other platforms (e.g. Instagram reels) may come later; build for what exists now, not for them.
+Xtend: Social Media Toolkit – a lightweight MV3 browser extension that adds small missing features to social media sites. Today, on X: the Share menu's "Download video" and "Download photo(s)" items save the post's video, GIF or original-quality photos, and the menu's "Copy link" / "Share post via …" give post links without tracking parameters. Other platforms (e.g. Instagram reels) may come later; build for what exists now, not for them.
 
 ## Hard rules
 
 - **Plain JavaScript only.** No TypeScript, bundlers, transpilers, frameworks, `package.json` or `node_modules`. Files in `extension/` are loaded by the browser exactly as written.
 - **No new dependencies**, in the extension, the tests or the scripts. Node built-ins and the Python standard library only.
 - **Minimal permissions.** The manifest asks for `downloads` and nothing else: no `host_permissions`, no `tabs`, no `<all_urls>`. Adding a permission needs the owner's explicit approval (it slows store review and changes what users consent to).
-- **No network calls of our own.** Video data comes only from X's own GraphQL responses that the page already fetches (`page/interceptor.js`). Links are cleaned only on their way out of X's own `clipboard.writeText` / `navigator.share` calls (`page/link-cleaner.js`); the clipboard is never read. No syndication API, no legacy formats, no fetching X or anything else from the extension, no analytics, no remote code.
+- **No network calls of our own.** Video and photo data comes only from X's own GraphQL responses that the page already fetches (`page/interceptor.js`). Links are cleaned only on their way out of X's own `clipboard.writeText` / `navigator.share` calls (`page/link-cleaner.js`); the clipboard is never read. No syndication API, no legacy formats, no fetching X or anything else from the extension, no analytics, no remote code.
 - **No visible UI beyond the Share menu item.** No extra buttons, toasts, popups or options page. Errors go to the console only when debug mode is on (`localStorage.xtendDebug = '1'`); nothing is logged otherwise.
 - **The name is fixed:** "Xtend: Social Media Toolkit" (short name "Xtend"). Do not change it.
 - **Never commit secrets or personal data.** `*.pem`, `*.crx`, `*.zip` and `dist/` stay git-ignored. Never print, paste or ask for the signing key. Strip the owner's handle, avatar and viewer-specific fields from any new fixture – the repo is public.
 
 ## Behaviour to keep
 
-- Original post: our item takes over X's native "Download video" entry. Quote post: our item is added. Reposts need nothing extra: a repost shows the original post, so the same code handles it (confirmed by the owner, 2026-11-26).
+- Original video post: our item takes over X's native "Download video" entry. Quote video post: our item is added. Photo post (original or quote): our "Download photo" / "Download photos" item is added. Reposts need nothing extra: a repost shows the original post, so the same code handles it (confirmed by the owner, 2026-11-26).
 - `allow_download = false` still downloads; just log it in debug mode.
-- GIFs are saved as `.mp4`, named `xtend_<tweetId>_<mediaId>_gif.mp4`; videos `xtend_<tweetId>_<mediaId>.mp4`.
-- Only `https://video.twimg.com/` URLs are ever downloaded. The service worker validates the sender, the URL and the IDs; keep those checks.
+- GIFs are saved as `.mp4`, named `xtend_<tweetId>_<mediaId>_gif.mp4`; videos `xtend_<tweetId>_<mediaId>.mp4`; photos `xtend_<tweetId>_<mediaId>.<ext>` (from `format=…`, e.g. `.jpg` / `.png`) fetched with `name=orig`.
+- Only `https://video.twimg.com/` (videos/GIFs) and `https://pbs.twimg.com/media/` (photos) URLs are ever downloaded. The service worker validates the sender, the media kind, the URL and the IDs; keep those checks.
 - Link cleaning: only a string that is nothing but a post link (`x.com` / `twitter.com`, `/<user>/status/<id>`, optionally `/photo/N` or `/video/N`) loses its query string and hash; anything else passes through untouched. X's call always goes through with the same `this` and promise, and APIs the browser doesn't have are never added.
 - Must work in Chromium and WebKit-based browsers. The main test browser is [Search](https://github.com/driceroland/Search); also check Chrome.
 
