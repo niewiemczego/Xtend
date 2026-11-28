@@ -2,7 +2,7 @@
 
 **Xtend: Social Media Toolkit** – a lightweight browser extension that adds the small features social media sites are missing. On X today:
 
-- **Save any video or GIF** in the best available quality, right from the post's Share menu – quoted posts included.
+- **Save any video, GIF or photo** in original quality, right from the post's Share menu – quoted posts included.
 - **Share clean post links** – no `?s=20`, `?a=…` or other tracking parameters.
 
 More platforms and tools to come. No accounts, no tracking, no third-party servers. Not affiliated with X Corp. or any other platform.
@@ -23,17 +23,18 @@ Clone the repo and load the `extension/` folder the same way. There is no build 
 
 ## Usage
 
-### Download a video or GIF
+### Download a video, GIF or photo
 
-Open the **Share** menu of a post with a video or GIF and choose **Download video**. The file goes to your Downloads folder in the best quality X offers:
+Open the **Share** menu of a post with media and choose **Download video** or **Download photo** (or **Download photos** when a post has more than one). Files go to your Downloads folder in the best quality X offers:
 
 - videos: `xtend_<postId>_<mediaId>.mp4`
 - GIFs: `xtend_<postId>_<mediaId>_gif.mp4` – X serves GIFs as MP4 videos, so that's what you get.
+- photos: `xtend_<postId>_<mediaId>.jpg` (or `.png` / `.webp`) – fetched at full original resolution (`name=orig`).
 
 Where the item appears:
 
-- **Original posts** – X's own *Download video* item now saves the file through Xtend.
-- **Quote posts** – if the quoted post has a video, Xtend adds the *Download video* item.
+- **Original posts** – X's own *Download video* item now saves videos through Xtend; for photo posts Xtend adds *Download photo* / *Download photos*.
+- **Quote posts** – if the quoted post has a video or photo, Xtend adds the download item.
 - **Reposts** – a repost shows the original post, so its Share menu works exactly like the original's.
 
 ### Clean post links
@@ -63,7 +64,7 @@ If a download doesn't start or a link isn't cleaned, debug mode shows what Xtend
 
 Every Xtend line in the console starts with `[xtend]`, for example:
 
-- videos found while you scroll – `+3 video(s), 12 stored`
+- media found while you scroll – `+3 media item(s), 12 stored`
 - each cleaned link – `cleaned link: <before> → <after>`
 - the download request and its result, or why it failed – e.g. *X hasn't sent this video yet…* or *the browser did not start the download*
 
@@ -81,7 +82,7 @@ localStorage.removeItem('xtendDebug')
 
 Xtend collects nothing and sends nothing anywhere. It has no servers.
 
-- It reads only what X already loads in your tab, to find each video's file address.
+- It reads only what X already loads in your tab, to find each video or photo's file address.
 - It keeps those addresses in memory only, until you close or reload the tab.
 - It runs only on x.com and twitter.com. Its one browser permission is `downloads`, to save the file you chose.
 

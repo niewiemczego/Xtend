@@ -1,4 +1,4 @@
-// Downloading a post's videos: resolve the MP4 links and hand them to the service worker.
+// Downloading a post's videos, GIFs or photos: resolve their links and hand them to the service worker.
 // Started from the Share menu. Nothing is shown on the page – progress and errors go to the
 // console in debug mode (content/debug.js).
 
@@ -75,16 +75,28 @@
 
   // --- downloading ---------------------------------------------------------------------
 
+  function nounFor(post, opts) {
+    const kind = opts && opts.kind;
+    if (kind === 'photo') return 'photo';
+    if (kind === 'video') return 'video';
+    if (Xtend.post.hasVideo(post) && !Xtend.post.hasPhoto(post)) return 'video';
+    if (Xtend.post.hasPhoto(post) && !Xtend.post.hasVideo(post)) return 'photo';
+    return 'media';
+  }
+
   /**
-   * Downloads every video of a post (incl. a quoted post's).
+   * Downloads a post's media (incl. a quoted post's). `opts.kind` filters to `'video'` or `'photo'`.
    * @returns {Promise<{saved: number, authorDisabled: boolean}>}
    * @throws when nothing could be saved
    */
-  async function downloadPost(post) {
-    const { items, missing } = Xtend.videoResolver.resolvePost(post);
+  async function downloadPost(post, opts) {
+    const { items, missing } = Xtend.videoResolver.resolvePost(post, opts);
     if (!items.length) {
+      const noun = nounFor(post, opts);
       throw new Error(
-        missing ? "X hasn't sent this video yet – open the post or scroll it into view, then try again." : 'No video in this post.',
+        missing
+          ? `X hasn't sent this ${noun} yet – open the post or scroll it into view, then try again.`
+          : `No ${noun} in this post.`,
       );
     }
     log('downloading', items);
@@ -93,10 +105,10 @@
 
     let saved = 0;
     let lastError = null;
-    for (const video of items) {
+    for (const media of items) {
       try {
         const reply = await Xtend.download.send(
-          { type: 'xtend:download', video, debug: Xtend.debug.enabled() },
+          { type: 'xtend:download', media, debug: Xtend.debug.enabled() },
           {
             timeoutMs: DOWNLOAD_TIMEOUT_MS,
             timeoutMessage: "Xtend's background script didn't report back on the download (timed out).",
@@ -117,16 +129,20 @@
   const busy = new WeakSet();
 
   /**
-   * Downloads a post's videos. A second call for the same post while it is still downloading
+   * Downloads a post's media. A second call for the same post while it is still downloading
    * is ignored. Never rejects; the outcome is logged in debug mode and returned:
    * { ok: true, saved, authorDisabled } | { ok: false, error } | { ok: false, skipped: true }
    */
-  async function start(post) {
+  async function start(post, opts) {
     if (!post || busy.has(post)) return { ok: false, skipped: true };
     busy.add(post);
     try {
-      const { saved, authorDisabled } = await downloadPost(post);
-      log(`saved ${saved} video(s)` + (authorDisabled ? ' – the author turned off downloads for this video' : ''));
+      const { saved, authorDisabled } = await downloadPost(post, opts);
+      const noun = nounFor(post, opts);
+      log(
+        `saved ${saved} ${noun === 'media' ? 'item(s)' : `${noun}(s)`}` +
+          (authorDisabled ? ' – the author turned off downloads for this media' : ''),
+      );
       return { ok: true, saved, authorDisabled };
     } catch (error) {
       const message = errorMessage(error);

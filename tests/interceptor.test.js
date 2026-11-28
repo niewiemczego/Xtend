@@ -16,7 +16,7 @@ function withInterceptor(fetchImpl) {
 }
 
 describe('interceptor – fetch', () => {
-  test('publishes the videos of a GraphQL response to the content script', async () => {
+  test('publishes the media of a GraphQL response to the content script', async () => {
     const win = withInterceptor(async () => fakeResponse(api('HomeTimeline')));
     await win.fetch(GRAPHQL);
     await flush();
@@ -25,8 +25,8 @@ describe('interceptor – fetch', () => {
     const { data, targetOrigin } = win.posted[0];
     assert.equal(targetOrigin, ORIGIN);
     assert.equal(data.source, 'xtend');
-    assert.equal(data.type, 'videos');
-    assert.equal(data.items.length, 22);
+    assert.equal(data.type, 'media');
+    assert.equal(data.items.length, 42);
   });
 
   test('X gets back exactly the same response object', async () => {
@@ -102,7 +102,7 @@ describe('interceptor – fetch', () => {
 describe('interceptor – XMLHttpRequest', () => {
   const xhrWindow = () => withInterceptor(async () => fakeResponse({}));
 
-  test('publishes videos from a text response', () => {
+  test('publishes media from a text response', () => {
     const win = xhrWindow();
     const xhr = new win.XMLHttpRequest();
     xhr.open('GET', GRAPHQL);
@@ -110,10 +110,12 @@ describe('interceptor – XMLHttpRequest', () => {
     assert.equal(xhr.sent, true);
     xhr.respond(200, api('TweetDetail'));
     assert.equal(win.posted.length, 1);
+    const items = plain(win.posted[0].data.items);
     assert.deepEqual(
-      plain(win.posted[0].data.items).map((i) => i.tweetId),
+      items.filter((i) => i.kind !== 'photo').map((i) => i.tweetId),
       ['2125654411900760238', '2125393023093592423', '2125448866132820027'],
     );
+    assert.equal(items.filter((i) => i.kind === 'photo').length, 5);
   });
 
   test('publishes videos from a json response', () => {

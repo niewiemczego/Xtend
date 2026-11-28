@@ -1,18 +1,21 @@
-// Service worker: saves videos with chrome.downloads.
+// Service worker: saves videos, GIFs and photos with chrome.downloads.
 //
 // Messages from the content script:
 //   { type: 'xtend:ping' }                                            → { ok: true }
-//   { type: 'xtend:download', video: { tweetId, mediaId, url, kind } } → { ok: true, downloadId, filename }
+//   { type: 'xtend:download', media: { tweetId, mediaId, url, kind } } → { ok: true, downloadId, filename }
 // Any failure → { ok: false, error }. Every step has a time limit, so the page never waits forever.
 //
-// The worker builds the file name itself and only accepts https://video.twimg.com/ URLs
-// from Xtend's own content scripts on x.com, so nothing else can use it to download files.
+// The worker builds the file name itself and only accepts https://video.twimg.com/ (videos/GIFs)
+// and https://pbs.twimg.com/media/ (photos) URLs from Xtend's own content scripts on x.com,
+// so nothing else can use it to download files.
 
 (function () {
   'use strict';
 
-  const VIDEO_URL = /^https:\/\/video\.twimg\.com\//;
   const DIGITS = /^\d+$/;
+  const KINDS = new Set(['video', 'gif', 'photo']);
+  const IMAGE_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'avif']);
+  const PHOTO_PATH = /^\/media\/[A-Za-z0-9_-]+(?:\.[a-zA-Z0-9]+)?$/;
   const PAGE_ORIGINS = ['https://x.com', 'https://twitter.com', 'https://mobile.x.com'];
   const DOWNLOAD_TIMEOUT_MS = 15000;
 
@@ -22,12 +25,38 @@
     if (debugMessage) console.log('[xtend]', ...args);
   }
 
-  /** e.g. xtend_2125387364696756699_2125387308996468736.mp4 – no folders (not every browser allows them). */
-  function buildFilename(video) {
-    const parts = ['xtend', video.tweetId];
-    if (video.mediaId) parts.push(video.mediaId);
-    if (video.kind === 'gif') parts.push('gif');
-    return `${parts.join('_')}.mp4`;
+  function imageExtension(url) {
+    try {
+      const parsed = new URL(url);
+      const format = (parsed.searchParams.get('format') || '').toLowerCase();
+      if (IMAGE_EXTS.has(format)) return format;
+      const m = /\.([a-zA-Z0-9]+)$/.exec(parsed.pathname);
+      if (m && IMAGE_EXTS.has(m[1].toLowerCase())) return m[1].toLowerCase();
+    } catch (_) {
+      // fall through
+    }
+    return 'jpg';
+  }
+
+  /** e.g. xtend_2125387364696756699_2125387308996468736.mp4 or .jpg – no folders (not every browser allows them). */
+  function buildFilename(media) {
+    const parts = ['xtend', media.tweetId];
+    if (media.mediaId) parts.push(media.mediaId);
+    if (media.kind === 'gif') parts.push('gif');
+    const ext = media.kind === 'photo' ? imageExtension(media.url) : 'mp4';
+    return `${parts.join('_')}.${ext}`;
+  }
+
+  function isAllowedUrl(kind, url) {
+    if (typeof url !== 'string') return false;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') return false;
+      if (kind === 'photo') return parsed.hostname === 'pbs.twimg.com' && PHOTO_PATH.test(parsed.pathname);
+      return parsed.hostname === 'video.twimg.com';
+    } catch (_) {
+      return false;
+    }
   }
 
   /** @returns {string|null} why the request is refused, or null when it's fine */
@@ -42,11 +71,14 @@
       }
     }
     if (!PAGE_ORIGINS.includes(origin)) return 'not from x.com';
-    const video = message.video;
-    if (!video || typeof video !== 'object') return 'no video';
-    if (typeof video.url !== 'string' || !VIDEO_URL.test(video.url)) return 'not a video.twimg.com URL';
-    if (typeof video.tweetId !== 'string' || !DIGITS.test(video.tweetId)) return 'bad post ID';
-    if (video.mediaId !== null && video.mediaId !== undefined && !DIGITS.test(String(video.mediaId))) {
+    const media = message.media || message.video;
+    if (!media || typeof media !== 'object') return 'no media';
+    if (!KINDS.has(media.kind)) return 'bad media kind';
+    if (!isAllowedUrl(media.kind, media.url)) {
+      return media.kind === 'photo' ? 'not a pbs.twimg.com URL' : 'not a video.twimg.com URL';
+    }
+    if (typeof media.tweetId !== 'string' || !DIGITS.test(media.tweetId)) return 'bad post ID';
+    if (media.mediaId !== null && media.mediaId !== undefined && !DIGITS.test(String(media.mediaId))) {
       return 'bad media ID';
     }
     return null;
@@ -88,11 +120,11 @@
   async function handleDownload(message, sender) {
     const refused = validate(message, sender);
     if (refused) return { ok: false, error: refused };
-    const video = message.video;
-    const filename = buildFilename(video);
-    log('download', filename, video.url);
+    const media = message.media || message.video;
+    const filename = buildFilename(media);
+    log('download', filename, media.url);
     try {
-      const downloadId = await download({ url: video.url, filename, conflictAction: 'uniquify' });
+      const downloadId = await download({ url: media.url, filename, conflictAction: 'uniquify' });
       log('download started', downloadId);
       return { ok: true, downloadId, filename };
     } catch (error) {

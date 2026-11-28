@@ -24,19 +24,19 @@ To see what the extension is doing while you work, turn on debug mode (see *Trou
 extension/                 the folder you load in Chrome and zip for release
   manifest.json
   shared/                  pure code used by more than one context
-    video-media.js         finds MP4 links in X's JSON (page world + service worker + tests)
+    video-media.js         finds video, GIF and photo links in X's JSON (page world + content + tests)
     post-link.js           strips tracking parameters from a post link (page world + tests)
   page/                    MAIN world
     interceptor.js         reads X's API responses (fetch + XHR)
     link-cleaner.js        cleans the link Copy link / Share post via … hand out
   content/                 loaded in the order listed in the manifest, sharing `self.Xtend`
     selectors.js           every selector for X's markup
-    post.js                post lookup: has video, tweet IDs, media ID
-    video-store.js         MP4 links received from the interceptor
-    video-resolver.js      video on screen → MP4 link
+    post.js                post lookup: videos, photos, tweet IDs, media ID
+    video-store.js         media links received from the interceptor
+    video-resolver.js      video or photo on screen → download URL
     debug.js               [xtend] console logs, only in debug mode
-    download.js            resolve a post's videos → service worker
-    share-menu.js          "Download video" in the Share menu
+    download.js            resolve a post's media → service worker
+    share-menu.js          "Download video" and "Download photo(s)" in the Share menu
     main.js                start-up and DOM observer (loaded last)
     content.css
   background/
