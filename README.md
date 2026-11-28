@@ -2,7 +2,7 @@
 
 **Xtend: Social Media Toolkit** – a lightweight browser extension that adds the small features social media sites are missing. On X today:
 
-- **Save any video, GIF or photo** in original quality, right from the post's Share menu – quoted posts included.
+- **Save videos, GIFs and photos** in original quality, right from the post's Share menu – every one in the post at once, quoted posts included.
 - **Share clean post links** – no `?s=20`, `?a=…` or other tracking parameters.
 - **Copy an embed link** – the post on `fixupx.com`, so its video plays right inside Discord, Telegram and other chat apps.
 
@@ -26,7 +26,7 @@ Clone the repo and load the `extension/` folder the same way. There is no build 
 
 ### Download a video, GIF or photo
 
-Open the **Share** menu of a post with media and choose **Download video** or **Download photo(s)**. Download photo(s) saves every photo of the post – also those a quote card on the timeline doesn't show. Files go to your Downloads folder in the best quality X offers:
+Open the **Share** menu of a post with media and choose **Download video** or **Download photo(s)**. One click saves all of them: **Download video** every video and GIF in the post, **Download photo(s)** every photo – also those a quote card on the timeline doesn't show. Files go to your Downloads folder in the best quality X offers:
 
 - videos: `xtend_<postId>_<mediaId>.mp4`
 - GIFs: `xtend_<postId>_<mediaId>_gif.mp4` – X serves GIFs as MP4 videos, so that's what you get.
@@ -108,17 +108,17 @@ Anyone can check that a release – and the copy in the Chrome Web Store – is 
 1. **Rebuild it from the tag** and compare the SHA-256 with the one on the release page. The build is reproducible, so the same code always gives a byte-identical zip.
    ```sh
    git clone https://github.com/niewiemczego/Xtend && cd Xtend
-   git checkout v0.2.0
+   git checkout v0.3.0
    node scripts/package.mjs --no-tests
-   cat dist/xtend-0.2.0.zip.sha256
+   cat dist/xtend-0.3.0.zip.sha256
    ```
 2. **Check where the release zip was built.** Every release has a GitHub build attestation that proves it came from this repo's release workflow:
    ```sh
-   gh attestation verify xtend-0.2.0.zip --repo niewiemczego/Xtend
+   gh attestation verify xtend-0.3.0.zip --repo niewiemczego/Xtend
    ```
 3. **Compare the Chrome Web Store copy.** The store re-signs every package and adds a `_metadata/` folder, so its file never has the zip's SHA-256 – but every file inside must be identical. Point the checker at the installed extension folder or at a downloaded `.crx`:
    ```sh
-   node scripts/verify-store.mjs <installed folder or .crx> xtend-0.2.0.files.sha256
+   node scripts/verify-store.mjs <installed folder or .crx> xtend-0.3.0.files.sha256
    ```
    To find the installed folder: `chrome://extensions` → turn on Developer mode → note Xtend's ID. The folder is `Extensions/<id>/<version>/` in your browser profile.
 
