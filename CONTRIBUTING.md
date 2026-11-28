@@ -144,8 +144,8 @@ Each release then has `xtend-<version>.crx`. It holds the release zip's files, s
 To sign by hand instead (e.g. before the secret is set):
 
 ```sh
-scripts/sign-crx.sh ~/Downloads/xtend-0.2.0.zip ~/.xtend/signing-key.pem
-# → dist/xtend-0.2.0.crx – upload it with "Upload New Package"
+scripts/sign-crx.sh ~/Downloads/xtend-0.3.0.zip ~/.xtend/signing-key.pem
+# → dist/xtend-0.3.0.crx – upload it with "Upload New Package"
 ```
 
 The script refuses a key stored inside the repository, and `*.pem` and `*.crx` are git-ignored. Keep the key in a password manager with an offline backup – replacing a lost key goes through store support.

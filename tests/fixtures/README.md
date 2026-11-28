@@ -24,7 +24,6 @@ captures the signed-in account (reply box avatar) is replaced with `me` / `profi
 | `html/share-menu-original.html`        | open Share menu of an original video post (native *Download video*) | 2026-11-26 |
 | `api/TweetDetail.json`                 | GraphQL `TweetDetail` of a video post with replies (videos + photos, quote) | 2026-11-26 |
 | `api/TweetResultByRestId.json`         | GraphQL `TweetResultByRestId` of a single video post               | 2026-11-26 |
-
 | `api/HomeTimeline.json`                | GraphQL `HomeTimeline`: 49 posts, 21 videos, 1 GIF, 11 quotes, no reposts | 2026-11-26 |
 | `share/post-links.json`                | Share menu *Copy link* / *Share post via …*: the call X makes, its argument and the clean link | 2026-11-26 |
 

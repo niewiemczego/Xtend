@@ -23,10 +23,11 @@ Small tools that social media sites are missing. On X: save videos, GIFs and ori
 Xtend adds the small tools that social media sites are missing – starting with saving media in original quality and clean links.
 
 SAVE VIDEOS, GIFS AND PHOTOS FROM X
-Open the Share menu of any post with a video, GIF or photo and choose "Download video" or "Download photo(s)". Xtend saves it to your Downloads folder in the best quality available – the same video file X plays (no re-encoding) or the full-resolution original image (name=orig).
+Open the Share menu of any post with a video, GIF or photo and choose "Download video" or "Download photo(s)". Xtend saves them to your Downloads folder in the best quality available – the same video file X plays (no re-encoding) or the full-resolution original image (name=orig).
 
+• One click saves every video or every photo of the post – no saving them one by one
 • Works on original posts, reposts and quote posts (it saves the media of the quoted post)
-• Always picks the highest-quality video or original-resolution photo (including multi-photo posts)
+• Always picks the highest-quality video or original-resolution photo
 • GIFs are saved as MP4, exactly as X stores them
 • Nothing added to the page: Xtend lives in the Share menu you already know
 
@@ -42,7 +43,7 @@ PRIVATE BY DESIGN
 • Only one permission: saving downloads
 
 LIGHTWEIGHT
-Plain JavaScript, no third-party libraries, about 40 KB.
+Plain JavaScript, no third-party libraries, about 70 KB.
 
 MORE TO COME
 Xtend is built to grow: more tools and more platforms are planned.
@@ -66,6 +67,12 @@ Source code and issue tracker: https://github.com/niewiemczego/Xtend
 
 Upload the screenshots in this order: `screenshot-download-video.png` (Download video in the Share
 menu), then `screenshot-clean-links.png` (Copy link without tracking parameters).
+
+New in 0.3.0 and not shown yet – worth a screenshot each:
+
+- **Download photo(s)** in the Share menu of a multi-photo post
+- **Copy embed link** in the Share menu, or a fixupx.com link playing its video in Discord / Telegram
+  (no own handle, avatar or chat names in view)
 
 More screenshots to consider (light theme, a public post, nothing personal in view – no own handle,
 DMs or notifications):
